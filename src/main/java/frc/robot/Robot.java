@@ -2,47 +2,38 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
+//https://maven.ctr-electronics.com/release/com/ctre/phoenix6/latest/Phoenix6-frc2025-latest.json
+//https://software-metadata.revrobotics.com/REVLib-2025.json
 package frc.robot;
 
-import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import static edu.wpi.first.units.Units.*;
 
-import edu.wpi.first.wpilibj.motorcontrol.MotorController;
-import edu.wpi.first.wpilibj.AnalogInput;
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
-import edu.wpi.first.math.kinematics.SwerveModulePosition;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import com.revrobotics.spark.SparkFlex;
-import com.revrobotics.spark.SparkClosedLoopController;
-import com.revrobotics.spark.SparkMax;
+import com.ctre.phoenix6.StatusCode;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.controls.NeutralOut;
+import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-// import com.revrobotics.spark.config.analogEncodersensorConfig;
+import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
-import java.io.ObjectInputFilter.Config;
-import java.lang.reflect.Array;
-import java.security.Key;
-
-import org.ejml.equation.Variable;
-
-import com.revrobotics.AbsoluteEncoder;
-import com.revrobotics.RelativeEncoder;
-import com.revrobotics.spark.SparkBase;
-import com.revrobotics.spark.ClosedLoopSlot;
-import com.revrobotics.spark.SparkAbsoluteEncoder;
-// import com.revrobotics.spark.SparkanalogEncodersensor;
-import com.revrobotics.config.BaseConfig;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 //   [SWERVE IS IN METERS]   //
 // BASE: 0.711m x 0.711m
@@ -74,13 +65,16 @@ public class Robot extends TimedRobot {
   public ClosedLoopConfig SteeringLoopConfig = new ClosedLoopConfig();
   public SparkBaseConfig SteeringBaseConfig = new SparkMaxConfig();
   public SparkBaseConfig VelocityBaseConfig = new SparkMaxConfig();
+  /* Start at velocity 0, use slot 0 */
+  private final VelocityVoltage krackenVelocity = new VelocityVoltage(0).withSlot(0);
+  /* Keep a neutral out so we can disable the motor */
+  private final NeutralOut m_brake = new NeutralOut();
 
   // Constants used to translate RPM to robot speed
   private final int RotationsPerMeter = 27;
   private final int SecondsPerMinute = 60;
   private final double MaxDriveSpeed = .1;
   private final double MaxTurnSpeed = .1;
-
 
   public enum ModuleOrder {
     FL, BL, FR, BR
@@ -99,6 +93,13 @@ public class Robot extends TimedRobot {
       new SparkMax(3, MotorType.kBrushless), // FrontRightDrive
       new SparkMax(14, MotorType.kBrushless),// BackRightDrive
   };
+
+  // TalonFX[] driveMotorsTalon = {
+  //     new TalonFX(10),
+  //     new TalonFX(22),
+  //     new TalonFX(3),
+  //     new TalonFX(14),
+  // };
 
   SparkMax[] steerMotors = {
       new SparkMax(15, MotorType.kBrushless), // FrontLeftSteer
@@ -134,8 +135,34 @@ public class Robot extends TimedRobot {
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
 
+    TalonFXConfiguration configs = new TalonFXConfiguration();
+
+    /*
+     * Voltage-based velocity requires a velocity feed forward to account for the
+     * back-emf of the motor
+     */
+    configs.Slot0.kS = 0.1; // To account for friction, add 0.1 V of static feedforward
+    configs.Slot0.kV = 0.12; // Kraken X60 is a 500 kV motor, 500 rpm per V = 8.333 rps per V, 1/8.33 = 0.12
+                             // volts / rotation per second
+    configs.Slot0.kP = 0.11; // An error of 1 rotation per second results in 0.11 V output
+    configs.Slot0.kI = 0; // No output for integrated error
+    configs.Slot0.kD = 0; // No output for error derivative
+    // Peak output of 8 volts
+    configs.Voltage.withPeakForwardVoltage(Volts.of(8))
+        .withPeakReverseVoltage(Volts.of(-8));
+
     for (int i = 0; i < 4; i++) {
       drivePIDControllers[i] = driveMotors[i].getClosedLoopController();
+      /* Retry config apply up to 5 times, report if failure */
+      // StatusCode status = StatusCode.StatusCodeNotInitialized;
+      // for (int j = 0; j < 5; ++j) {
+      //   status = driveMotorsTalon[i].getConfigurator().apply(configs);
+      //   if (status.isOK())
+      //     break;
+      // }
+      // if (!status.isOK()) {
+      //   System.out.println("Could not apply configs, error code: " + status.toString());
+      // }
       driveEncoders[i] = driveMotors[i].getEncoder();
       driveEncoders[i].setPosition(0);
       steerPIDControllers[i] = steerMotors[i].getClosedLoopController();
@@ -252,6 +279,8 @@ public class Robot extends TimedRobot {
       drivePIDControllers[i]
           .setReference(OptimizedStates[i].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
               SparkMax.ControlType.kVelocity, ClosedLoopSlot.kSlot0, FeedForward);
+      // driveMotorsTalon[i].setControl(
+      //     krackenVelocity.withVelocity(OptimizedStates[i].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute));
       steerPIDControllers[i]
           .setReference(OptimizedStates[i].angle.getRadians() * 55 / (2 * Math.PI) + (RelativeOffset[i] / 360) * 55,
               SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward);
