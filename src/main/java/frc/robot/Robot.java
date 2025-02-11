@@ -257,25 +257,7 @@ double JoystickTolerance = 0.06;
     
   
 
-// // set PID coefficients
-//     VelocityLoopController.
-//     VelocityLoopController.setI(Int);
-//     VelocityLoopController.setD(kD);
-//     VelocityLoopController.setIZone(kIz);
-//     VelocityLoopController.setFF(kFF);
-//     VelocityLoopController.setOutputRange(kMinOutput, kMaxOutput);
 
-    //Display PID coefficients on Dashboard
-  
-
-//  VoltageFL = FrontLeftAnalog.getVoltage();
-//  PositionFL = FrontLeftAnalog.getPosition();
-//  VoltageFR = FrontRightAnalog.getVoltage();
-//  PositionFR = FrontRightAnalog.getPosition();
-//  VoltageBL = BackLeftAnalog.getVoltage();
-//  PositionBL = BackLeftAnalog.getPosition();
-//  VoltageBR = BackRightAnalog.getVoltage();
-//  PositionBR = BackRightAnalog.getPosition();
 
 //  DegreeFL = -PositionFL * 180;//(-VoltageFL+2.228299140930176)%2.228299140930176*(360/2.228299140930176);
 //  DegreeFR = -PositionFR * 180;//(-VoltageFR+2.287067413330078)%2.287067413330078*(360/2.287067413330078);
