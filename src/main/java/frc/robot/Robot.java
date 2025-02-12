@@ -95,10 +95,10 @@ public class Robot extends TimedRobot {
   };
 
   // TalonFX[] driveMotorsTalon = {
-  //     new TalonFX(10),
-  //     new TalonFX(22),
-  //     new TalonFX(3),
-  //     new TalonFX(14),
+  // new TalonFX(10),
+  // new TalonFX(22),
+  // new TalonFX(3),
+  // new TalonFX(14),
   // };
 
   SparkMax[] steerMotors = {
@@ -156,12 +156,13 @@ public class Robot extends TimedRobot {
       /* Retry config apply up to 5 times, report if failure */
       // StatusCode status = StatusCode.StatusCodeNotInitialized;
       // for (int j = 0; j < 5; ++j) {
-      //   status = driveMotorsTalon[i].getConfigurator().apply(configs);
-      //   if (status.isOK())
-      //     break;
+      // status = driveMotorsTalon[i].getConfigurator().apply(configs);
+      // if (status.isOK())
+      // break;
       // }
       // if (!status.isOK()) {
-      //   System.out.println("Could not apply configs, error code: " + status.toString());
+      // System.out.println("Could not apply configs, error code: " +
+      // status.toString());
       // }
       driveEncoders[i] = driveMotors[i].getEncoder();
       driveEncoders[i].setPosition(0);
@@ -260,12 +261,12 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
     PIDTuning();
 
-    double JoystickTolerance = 0.09;
     // Joystick Control
     double TranslateY = -JoystickL.getX() * MaxDriveSpeed;
     double TranslateX = -JoystickL.getY() * MaxDriveSpeed;
     double TranslateRotation = -JoystickR.getX() * MaxTurnSpeed;
 
+    double JoystickTolerance = 0.09;
     if (Math.abs(TranslateX) < JoystickTolerance)
       TranslateX = 0.0;
     if (Math.abs(TranslateY) < JoystickTolerance)
@@ -273,17 +274,26 @@ public class Robot extends TimedRobot {
     if (Math.abs(TranslateRotation) < JoystickTolerance)
       TranslateRotation = 0.0;
 
-    SwerveModuleState[] OptimizedStates = performKinematicWith(TranslateX, TranslateY, TranslateRotation);
+    double motionTolerance = .1;
+    if (Math.abs(TranslateRotation) > motionTolerance || Math.abs(TranslateX) > motionTolerance
+        || Math.abs(TranslateY) > motionTolerance)
+      driveWith(TranslateX, TranslateY, TranslateRotation);
 
+  }
+
+  public void driveWith(double xMeters, double yMeters, double rotateRadians) {
+    SwerveModuleState[] OptimizedStates = performKinematicWith(xMeters, yMeters, rotateRadians);
     for (int i = 0; i < 4; i++) {
       drivePIDControllers[i]
           .setReference(OptimizedStates[i].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
-              SparkMax.ControlType.kVelocity, ClosedLoopSlot.kSlot0, FeedForward);
+              SparkMax.ControlType.kVelocity, ClosedLoopSlot.kSlot0);
+      // Prep for Kraken x60's
       // driveMotorsTalon[i].setControl(
-      //     krackenVelocity.withVelocity(OptimizedStates[i].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute));
+      // krackenVelocity.withVelocity(OptimizedStates[i].speedMetersPerSecond *
+      // RotationsPerMeter * SecondsPerMinute));
       steerPIDControllers[i]
           .setReference(OptimizedStates[i].angle.getRadians() * 55 / (2 * Math.PI) + (RelativeOffset[i] / 360) * 55,
-              SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward);
+              SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0);
     }
   }
 
