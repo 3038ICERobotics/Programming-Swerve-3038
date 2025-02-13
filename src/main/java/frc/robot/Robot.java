@@ -4,6 +4,10 @@
 
 //https://maven.ctr-electronics.com/release/com/ctre/phoenix6/latest/Phoenix6-frc2025-latest.json
 //https://software-metadata.revrobotics.com/REVLib-2025.json
+
+/***************************************************************************************
+ *                              IMPORTS                                                *
+***************************************************************************************/
 package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
@@ -44,155 +48,139 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 // BLEFT: (-0.285, 0.285)
 // BRIGHT: (-0.285, -0.285)
 
-/**
- * The methods in this class are called automatically corresponding to each
- * mode, as described in
- * the TimedRobot documentation. If you change the name of this class or the
- * package after creating
- * this project, you must also update the Main.java file in the project.
- */
+/***************************************************************************************
+ *                              ROBOT CLASS                                            *
+ *                                                                                     *
+ * The methods in this class are called automatically corresponding to each mode,      *
+ * as described in the TimedRobot documentation. If you change the name of this class  *
+ * or the package after creating this project, you must also update the Main.java      *
+ * file in the project.                                                                *
+***************************************************************************************/
 public class Robot extends TimedRobot {
-  private static final String kDefaultAuto = "Default";
-  private static final String kCustomAuto = "My Auto";
+  /* Auto Selection */
+  private static final String kDefaultAuto  = "Default";
+  private static final String kCustomAuto   = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-  // Variables used to tune PID - remove once values are defined
+  /* Variables used to tune PID - remove once values are defined - TODO */
   public double Prop, Int, Der, IZone, FeedForward, MinOutput, MaxOutput, MaxRPM;
 
-  // Configuration configurations
-  public ClosedLoopConfig VelocityLoopConfig = new ClosedLoopConfig();
-  public ClosedLoopConfig SteeringLoopConfig = new ClosedLoopConfig();
-  public SparkBaseConfig SteeringBaseConfig = new SparkMaxConfig();
-  public SparkBaseConfig VelocityBaseConfig = new SparkMaxConfig();
-  /* Start at velocity 0, use slot 0 */
-  private final VelocityVoltage krackenVelocity = new VelocityVoltage(0).withSlot(0);
-  /* Keep a neutral out so we can disable the motor */
-  private final NeutralOut m_brake = new NeutralOut();
+  /* Spark Max Configurations */
+  public ClosedLoopConfig VelocityLoopConfig  = new ClosedLoopConfig();
+  public ClosedLoopConfig SteeringLoopConfig  = new ClosedLoopConfig();
+  public SparkBaseConfig SteeringBaseConfig   = new SparkMaxConfig();
+  public SparkBaseConfig VelocityBaseConfig   = new SparkMaxConfig();
 
-  // Constants used to translate RPM to robot speed
-  private final int RotationsPerMeter = 27;
-  private final int SecondsPerMinute = 60;
-  private final double MaxDriveSpeed = .1;
-  private final double MaxTurnSpeed = .1;
+  /* Constants used to translate RPM to robot speed */
+  private final int     RotationsPerMeter = 27;
+  private final int     SecondsPerMinute  = 60;
+  private final double  MaxDriveSpeed     = .1;
+  private final double  MaxTurnSpeed      = .1;
 
   public enum ModuleOrder {
-    FL, BL, FR, BR
+    FL, BL, FR, BR, SizeOfModuleOrder
   };
 
-  // Swerve Kinematics
-  SwerveDriveKinematics Kinematics = new SwerveDriveKinematics(new Translation2d(0.285, 0.285),
-      new Translation2d(-0.285, 0.285),
-      new Translation2d(0.285, -0.285), new Translation2d(-0.285, -0.285));
+  /* Swerve Kinematics Setup */
+  SwerveDriveKinematics Kinematics = new SwerveDriveKinematics(new Translation2d(0.285, 0.285), // FL
+                                                               new Translation2d(-0.285, 0.285),  // BL
+                                                               new Translation2d(0.285, -0.285),  // FR 
+                                                               new Translation2d(-0.285, -0.285));  // BR
 
-  // Initialize Motors
-
+  /* Initialize Drive Motors */
+  // TODO - define device IDs as constants in another file
   SparkMax[] driveMotors = {
-      new SparkMax(10, MotorType.kBrushless), // FrontLeftDrive
-      new SparkMax(22, MotorType.kBrushless), // BackLeftDrive
-      new SparkMax(3, MotorType.kBrushless), // FrontRightDrive
-      new SparkMax(14, MotorType.kBrushless),// BackRightDrive
+      new SparkMax(10, MotorType.kBrushless),   // FrontLeftDrive
+      new SparkMax(22, MotorType.kBrushless),   // BackLeftDrive
+      new SparkMax(3,  MotorType.kBrushless),   // FrontRightDrive
+      new SparkMax(14, MotorType.kBrushless),   // BackRightDrive
   };
 
-  // TalonFX[] driveMotorsTalon = {
-  //     new TalonFX(10),
-  //     new TalonFX(22),
-  //     new TalonFX(3),
-  //     new TalonFX(14),
-  // };
-
+  /* Initialize Steer Motors */ 
+  // TODO - define device IDs as constants in another file
   SparkMax[] steerMotors = {
-      new SparkMax(15, MotorType.kBrushless), // FrontLeftSteer
-      new SparkMax(8, MotorType.kBrushless), // BackLeftSteer
-      new SparkMax(1, MotorType.kBrushless), // FrontRightSteer
-      new SparkMax(2, MotorType.kBrushless), // BackRightSteer
+      new SparkMax(15, MotorType.kBrushless),   // FrontLeftSteer
+      new SparkMax(8, MotorType.kBrushless),    // BackLeftSteer
+      new SparkMax(1, MotorType.kBrushless),    // FrontRightSteer
+      new SparkMax(2, MotorType.kBrushless),    // BackRightSteer
   };
 
-  // Array
-  SparkClosedLoopController[] drivePIDControllers = new SparkClosedLoopController[4];
-  SparkClosedLoopController[] steerPIDControllers = new SparkClosedLoopController[4];
+  /* Initialize Array of Controllers for Each Motor Type */
+  SparkClosedLoopController[] drivePIDControllers = new SparkClosedLoopController[ModuleOrder.SizeOfModuleOrder.ordinal()];
+  SparkClosedLoopController[] steerPIDControllers = new SparkClosedLoopController[ModuleOrder.SizeOfModuleOrder.ordinal()];
 
-  // Initialize Encoders
-  RelativeEncoder[] driveEncoders = new RelativeEncoder[4];
-  RelativeEncoder[] steerEncoders = new RelativeEncoder[4];
+  /* Initialize Encoders */
+  // TODO - get rid of magic number '4' like above
+  RelativeEncoder[] driveEncoders   = new RelativeEncoder[4];
+  RelativeEncoder[] steerEncoders   = new RelativeEncoder[4];
+  AnalogContainer[] analogEncoders  = new AnalogContainer[4];
 
-  AnalogContainer[] analogEncoders = new AnalogContainer[4];
-  double[] RelativeOffset = { 0, 0, 0, 0 };
+  double[] AnalogEncoderDegrees = {0.0, 0.0f, 0.0f, 0.0f};
 
-  // Initialize Joysticks
+  double[] RelativeOffset = { 0, 0, 0, 0 }; // TODO
+
+  /* Initialize Joysticks */
   Joystick JoystickL = new Joystick(0);
   Joystick JoystickR = new Joystick(1);
 
-  double BLSTuningSetpoint = 0.0;
-
-  /**
-   * This function is run when the robot is first started up and should be used
-   * for any
-   * initialization code.
-   */
+  /***************************************************************************************
+   *                              ROBOT TASK                                             *
+   *                                                                                     *
+   * This function is run when the robot is first started up and should be used          *
+   * for any initialization code.                                                        *
+  ***************************************************************************************/
   public Robot() {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
 
-    TalonFXConfiguration configs = new TalonFXConfiguration();
+    /* Set the Motor Controller Configurations */
+    for (int i = 0; i < ModuleOrder.SizeOfModuleOrder.ordinal(); i++) {
 
-    /*
-     * Voltage-based velocity requires a velocity feed forward to account for the
-     * back-emf of the motor
-     */
-    configs.Slot0.kS = 0.1; // To account for friction, add 0.1 V of static feedforward
-    configs.Slot0.kV = 0.12; // Kraken X60 is a 500 kV motor, 500 rpm per V = 8.333 rps per V, 1/8.33 = 0.12
-                             // volts / rotation per second
-    configs.Slot0.kP = 0.11; // An error of 1 rotation per second results in 0.11 V output
-    configs.Slot0.kI = 0; // No output for integrated error
-    configs.Slot0.kD = 0; // No output for error derivative
-    // Peak output of 8 volts
-    configs.Voltage.withPeakForwardVoltage(Volts.of(8))
-        .withPeakReverseVoltage(Volts.of(-8));
-
-    for (int i = 0; i < 4; i++) {
-      drivePIDControllers[i] = driveMotors[i].getClosedLoopController();
-      /* Retry config apply up to 5 times, report if failure */
-      // StatusCode status = StatusCode.StatusCodeNotInitialized;
-      // for (int j = 0; j < 5; ++j) {
-      //   status = driveMotorsTalon[i].getConfigurator().apply(configs);
-      //   if (status.isOK())
-      //     break;
-      // }
-      // if (!status.isOK()) {
-      //   System.out.println("Could not apply configs, error code: " + status.toString());
-      // }
-      driveEncoders[i] = driveMotors[i].getEncoder();
-      driveEncoders[i].setPosition(0);
+      /* Populate the motor controllers and encoders */
       steerPIDControllers[i] = steerMotors[i].getClosedLoopController();
-      steerEncoders[i] = steerMotors[i + 4].getEncoder();
+      drivePIDControllers[i] = driveMotors[i].getClosedLoopController();
+      steerEncoders[i] = steerMotors[i].getEncoder();
+      driveEncoders[i] = driveMotors[i].getEncoder();
+    
+       /* reset encoders and offsets to 0 */
+      driveEncoders[i].setPosition(0);
       steerEncoders[i].setPosition(0);
       RelativeOffset[i] = 0;
     }
-    analogEncoders[0] = new AnalogContainer(steerMotors[0].getAnalog(), 2.23, 1.60);
-    analogEncoders[1] = new AnalogContainer(steerMotors[1].getAnalog(), 2.23, 2.18);
-    analogEncoders[2] = new AnalogContainer(steerMotors[2].getAnalog(), 2.27, 1.78);
-    analogEncoders[3] = new AnalogContainer(steerMotors[3].getAnalog(), 2.20, 0.12);
 
+    /* Create new Analog Encoder Objects and update analog Encoder Array */
+    analogEncoders[ModuleOrder.FL.ordinal()] = new AnalogContainer(steerMotors[ModuleOrder.FL.ordinal()].getAnalog(), 2.23, 1.60);
+    analogEncoders[ModuleOrder.BL.ordinal()] = new AnalogContainer(steerMotors[ModuleOrder.BL.ordinal()].getAnalog(), 2.23, 2.18);
+    analogEncoders[ModuleOrder.FR.ordinal()] = new AnalogContainer(steerMotors[ModuleOrder.FR.ordinal()].getAnalog(), 2.27, 1.78);
+    analogEncoders[ModuleOrder.BR.ordinal()] = new AnalogContainer(steerMotors[ModuleOrder.BR.ordinal()].getAnalog(), 2.20, 0.12);
+
+    /* Set velocity loop control parameters */
+    // TODO - create constants for the control gains
     VelocityLoopConfig.pidf(0.000170, 0.000001, 0.000020, 0.000001, ClosedLoopSlot.kSlot0);
     VelocityLoopConfig.outputRange(MinOutput, MaxOutput, ClosedLoopSlot.kSlot0);
-
-    SteeringLoopConfig.pidf(1, 0.5, 0.1, 0.00001, ClosedLoopSlot.kSlot0);
-    SteeringLoopConfig.outputRange(MinOutput, MaxOutput, ClosedLoopSlot.kSlot0);
-
     VelocityBaseConfig.apply(VelocityLoopConfig);
     VelocityBaseConfig.inverted(false);
 
+    /* Set steering loop control parameters */
+    // TODO - create constants for the control gains
+    SteeringBaseConfig.smartCurrentLimit(15); // Default limit is 80A - this limit is too high for a NEO 550
+    SteeringLoopConfig.pidf(1, 0.5, 0.1, 0.00001, ClosedLoopSlot.kSlot0);
+    SteeringLoopConfig.outputRange(MinOutput, MaxOutput, ClosedLoopSlot.kSlot0);
     SteeringBaseConfig.apply(SteeringLoopConfig);
     SteeringBaseConfig.inverted(false);
 
-    for (int i = 0; i < 4; i++) {
+    /* apply the steering and velocity configurations to the motor controller object */
+    for (int i = 0; i < ModuleOrder.SizeOfModuleOrder.ordinal(); i++) {
       driveMotors[i].configure(VelocityBaseConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
       steerMotors[i].configure(SteeringBaseConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     }
   }
 
+  /***************************************************************************************/
+  /*                           ROBOT PERIODIC TASK                                       */
+  /***************************************************************************************/
   /**
    * This function is called every 20 ms, no matter the mode. Use this for items
    * like diagnostics
@@ -210,6 +198,9 @@ public class Robot extends TimedRobot {
 
   }
 
+  /***************************************************************************************/
+  /*                           AUTONOMOUS INIT                                           */
+  /***************************************************************************************/
   /**
    * This autonomous (along with the chooser code above) shows how to select
    * between different
@@ -228,44 +219,57 @@ public class Robot extends TimedRobot {
    * chooser code above as well.
    */
   @Override
+  // TODO - Add a header here similar to above
   public void autonomousInit() {
     m_autoSelected = m_chooser.getSelected();
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     // System.out.println("Auto selected: " + m_autoSelected);
   }
 
+  /***************************************************************************************/
+  /*                           AUTONOMOUS PERIODIC                                       */
+  /***************************************************************************************/
   /** This function is called periodically during autonomous. */
   @Override
+  // TODO - Add a header here similar to above
   public void autonomousPeriodic() {
     switch (m_autoSelected) {
       case kCustomAuto:
-        // Put custom auto code here
+        // TODO Put custom auto code here
         break;
       case kDefaultAuto:
       default:
-        // Put default auto code here
+        // TODO Put default auto code here
         break;
     }
   }
 
+  /***************************************************************************************/
+  /*                           TELEOP INIT                                               */
+  /***************************************************************************************/
   /** This function is called once when teleop is enabled. */
   @Override
+  // TODO - Add a header here similar to above
   public void teleopInit() {
     AnalogInit();
     PIDTuningInit();
   }
 
+  /***************************************************************************************/
+  /*                           TELEOP PERIODIC                                           */
+  /***************************************************************************************/
   /** This function is called periodically during operator control. */
   @Override
+  // TODO - Add a header here similar to above
   public void teleopPeriodic() {
-    PIDTuning();
 
-    double JoystickTolerance = 0.09;
-    // Joystick Control
+    /* Initialize Joystick Parameters */
+    double JoystickTolerance = 0.09; // TODO move to a top level define/constant
     double TranslateY = -JoystickL.getX() * MaxDriveSpeed;
     double TranslateX = -JoystickL.getY() * MaxDriveSpeed;
     double TranslateRotation = -JoystickR.getX() * MaxTurnSpeed;
 
+    /* Apply Joystick Tolerance */
     if (Math.abs(TranslateX) < JoystickTolerance)
       TranslateX = 0.0;
     if (Math.abs(TranslateY) < JoystickTolerance)
@@ -273,30 +277,55 @@ public class Robot extends TimedRobot {
     if (Math.abs(TranslateRotation) < JoystickTolerance)
       TranslateRotation = 0.0;
 
+    /* Get Speed and Angle commands for the swerve modules */
     SwerveModuleState[] OptimizedStates = performKinematicWith(TranslateX, TranslateY, TranslateRotation);
 
-    for (int i = 0; i < 4; i++) {
+    /* For every swerve module */
+    for (int i = 0; i < ModuleOrder.SizeOfModuleOrder.ordinal(); i++) {
+      /* set the speed target */
       drivePIDControllers[i]
           .setReference(OptimizedStates[i].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
               SparkMax.ControlType.kVelocity, ClosedLoopSlot.kSlot0, FeedForward);
-      // driveMotorsTalon[i].setControl(
-      //     krackenVelocity.withVelocity(OptimizedStates[i].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute));
+      /* set the angle target */
+      
+      // This logic should make it so we never have to reset the wheels to 0
+      // Math to get to new setpoint
+      // delta between actual and commanded angle
+      double angleDelta = (OptimizedStates[i].angle.getRadians() * 360/(2*Math.PI)) - analogEncoders[i].getDegrees();
+      // translate angle delta to rotations
+      double rotationsDelta = (angleDelta * 55/360.0);
+      // Look at current position in rotations, add delta for new setpoint
+      double newSetpoint = rotationsDelta + steerEncoders[i].getPosition();
       steerPIDControllers[i]
-          .setReference(OptimizedStates[i].angle.getRadians() * 55 / (2 * Math.PI) + (RelativeOffset[i] / 360) * 55,
+          .setReference(-newSetpoint, //OptimizedStates[i].angle.getRadians() * 55 / (2 * Math.PI) //(RelativeOffset[i] / 360) * 55, // TODO figure out this math
               SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward);
+
     }
+    SmartDashboard.putNumber("FL Setpoint", (OptimizedStates[0].angle.getRadians() * 360/(2*Math.PI)));
+    jamesDebug();
+    
   }
 
+  /***************************************************************************************/
+  /*                           OTHER FUNCTIONS                                           */
+  /***************************************************************************************/
+  /* Perform Kinematics to determine module commands */
   public SwerveModuleState[] performKinematicWith(double travelX, double travelY, double rotateRadians) {
+    /* Create chassis speeds and module state objects */
     ChassisSpeeds speeds = new ChassisSpeeds(travelX, travelY, rotateRadians);
     SwerveModuleState[] moduleStates = Kinematics.toSwerveModuleStates(speeds);
-    for (int i = 0; i < 4; i++) {
+
+    /* Optimize the angle */
+    for (int i = 0; i < ModuleOrder.SizeOfModuleOrder.ordinal(); i++) {
       moduleStates[i] = angleMinimize(analogEncoders[i].getDegrees(), moduleStates[i]);
     }
+
+    /* Account for max speed */
     Kinematics.desaturateWheelSpeeds(moduleStates, MaxDriveSpeed);
     return moduleStates;
   }
 
+  /* Optimize the angle setpoint to ensure we never rotate more than 90 degrees */
   public SwerveModuleState angleMinimize(double CurrentAngle, SwerveModuleState TargetState) {
     double newAngle = TargetState.angle.getDegrees() - CurrentAngle;
 
@@ -311,14 +340,16 @@ public class Robot extends TimedRobot {
     return TargetState;
   }
 
+  /* Initialize the analog input objects */
   public void AnalogInit() {
     // initialize the analog offset
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < ModuleOrder.SizeOfModuleOrder.ordinal(); i++) {
       analogEncoders[i].offset = 0;// analogEncoders[i].maxVolt+analogEncoders[i].sensor.getPosition()-analogEncoders[i].zeroVolt;
       RelativeOffset[i] = analogEncoders[i].offset * 360 / analogEncoders[i].maxVolt;
     }
   }
 
+  /* Create Smart Dashboard Elements for PID Tuning */
   public void PIDTuningInit() {
     SmartDashboard.putNumber("PIDSetting: Steer(1) Drive(2) None(0)", 0);
     SmartDashboard.putNumber("P Gain", Prop);
@@ -331,19 +362,20 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("BLSetpoint", 0);
   }
 
+  /* Apply Smart Dashboard Elements for PID Tuning */
   public void PIDTuning() {
     double tuning = SmartDashboard.getNumber("PIDSetting: Steer(1) Drive(2) None(0)", 0);
-    if (tuning != 1 || tuning != 2)
+    if (tuning != 1 || tuning != 2) // if tuning is None - do nothing
       return;
-    double P = SmartDashboard.getNumber("P Gain", 0); // 0.000170
-    double I = SmartDashboard.getNumber("I Gain", 0); // 0.000001
-    double D = SmartDashboard.getNumber("D Gain", 0); // 0.000020
-    double IZ = SmartDashboard.getNumber("I Zone", 0);
-    double FF = SmartDashboard.getNumber("Feed Forward", 0); // 0.000001
+    double FF     = SmartDashboard.getNumber("Feed Forward", 0); // 0.000001
     double MaxOut = SmartDashboard.getNumber("Max Output", 1);
+    double P      = SmartDashboard.getNumber("P Gain", 0); // 0.000170
+    double I      = SmartDashboard.getNumber("I Gain", 0); // 0.000001
+    double D      = SmartDashboard.getNumber("D Gain", 0); // 0.000020
+    double IZ     = SmartDashboard.getNumber("I Zone", 0);
     double MinOut = SmartDashboard.getNumber("Min Output", -1);
 
-    if (tuning == 1) {
+    if (tuning == 1) {  // if tuning is steer
       SteeringLoopConfig.p(P, ClosedLoopSlot.kSlot0);
       SteeringLoopConfig.i(I, ClosedLoopSlot.kSlot0);
       SteeringLoopConfig.d(D, ClosedLoopSlot.kSlot0);
@@ -358,7 +390,7 @@ public class Robot extends TimedRobot {
       SteeringLoopConfig.outputRange(-1, 1);
       SteeringBaseConfig.smartCurrentLimit(15); // Default limit is 80A - this limit is too high for a NEO 550
       SteeringBaseConfig.apply(SteeringLoopConfig);
-    } else if (tuning == 2) {
+    } else if (tuning == 2) { // if tuning is drive
       VelocityLoopConfig.p(P, ClosedLoopSlot.kSlot0);
       VelocityLoopConfig.i(I, ClosedLoopSlot.kSlot0);
       VelocityLoopConfig.d(D, ClosedLoopSlot.kSlot0);
@@ -371,11 +403,11 @@ public class Robot extends TimedRobot {
       VelocityBaseConfig.closedLoop
           .pidf(P, I, D, FF, ClosedLoopSlot.kSlot0);
       VelocityLoopConfig.outputRange(-1, 1);
-      VelocityBaseConfig.smartCurrentLimit(15); // Default limit is 80A - this limit is too high for a NEO 550
       VelocityBaseConfig.apply(VelocityLoopConfig);
     }
 
-    for (int i = 0; i < 4; i++) {
+    /* Apply the updated tuning paramters */
+    for (int i = 0; i < ModuleOrder.SizeOfModuleOrder.ordinal(); i++) {
       if (tuning == 2)
         driveMotors[i].configure(VelocityBaseConfig, ResetMode.kNoResetSafeParameters,
             PersistMode.kNoPersistParameters);
@@ -383,10 +415,24 @@ public class Robot extends TimedRobot {
         steerMotors[i].configure(SteeringBaseConfig, ResetMode.kNoResetSafeParameters,
             PersistMode.kNoPersistParameters);
     }
+
   }
 
   public void lowLevelDrive() {
+  }
 
+  public void jamesDebug() {
+
+    // Get the Angles
+    for (int i = 0; i < ModuleOrder.SizeOfModuleOrder.ordinal(); i++)
+    {
+      AnalogEncoderDegrees[i] = analogEncoders[i].getDegrees();
+    }
+
+    SmartDashboard.putNumber("FL Angle", AnalogEncoderDegrees[ModuleOrder.FL.ordinal()]);
+    SmartDashboard.putNumber("BL Angle", AnalogEncoderDegrees[ModuleOrder.BL.ordinal()]);
+    SmartDashboard.putNumber("FR Angle", AnalogEncoderDegrees[ModuleOrder.FR.ordinal()]);
+    SmartDashboard.putNumber("BR Angle", AnalogEncoderDegrees[ModuleOrder.BR.ordinal()]);
   }
 
   /** This function is called once when the robot is disabled. */
