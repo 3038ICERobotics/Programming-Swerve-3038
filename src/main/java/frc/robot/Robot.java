@@ -444,17 +444,19 @@ public class Robot extends TimedRobot {
         OptimizedStates[1].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
         OptimizedStates[2].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
         OptimizedStates[3].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
-        OptimizedStates[0].angle.getRadians(),
+        OptimizedStates[0].angle.getRotations(),
 
-        OptimizedStates[1].angle.getRadians(),
+        OptimizedStates[1].angle.getRotations(),
 
-        OptimizedStates[2].angle.getRadians(),
+        OptimizedStates[2].angle.getRotations(),
 
-        OptimizedStates[3].angle.getRadians()
+        OptimizedStates[3].angle.getRotations()
 
     };
 
     for (int i = 0; i < 8; i++) {
+      if(i>3)
+        setPoints[i]=((setPoints[i]/*-analogs[i-4].getZeroRotations()+5*/)*55)%55;//+encoders[i].getPosition();
       if (Math.abs(setPoints[i]) < .1) {
         setPoints[i] = 0;
       }
@@ -467,17 +469,17 @@ public class Robot extends TimedRobot {
         SmartDashboard.putNumber("TargetDrive" + ModuleOrder.values()[i].toString(), setPoints[i]);
       } else {
         SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i - 4].toString(),
-            PIDControllers[i].setReference(setPoints[i] * 55 / (2 * Math.PI) + (RelativeOffset[i - 4] / 360) * 55,
+            PIDControllers[i].setReference(setPoints[i],
                 SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward).toString());
-        SmartDashboard.putNumber("TargetSteer" + ModuleOrder.values()[i - 4].toString(),
-            setPoints[i] * 360 / (2 * Math.PI));
-        SmartDashboard.putNumber("SteerCurAnalogOffset" + ModuleOrder.values()[i - 4].toString(),
-            RelativeOffset[i - 4]);
-        SmartDashboard.putNumber("SteerCurAnalogDirect" + ModuleOrder.values()[i - 4].toString(),
-            analogs[i - 4].getDegrees());
+        // SmartDashboard.putNumber("TargetSteer" + ModuleOrder.values()[i - 4].toString(),
+        //     setPoints[i] * 360 / (2 * Math.PI));
+        // SmartDashboard.putNumber("SteerCurAnalogOffset" + ModuleOrder.values()[i - 4].toString(),
+        //     RelativeOffset[i - 4]);
+        // SmartDashboard.putNumber("SteerCurAnalogDirect" + ModuleOrder.values()[i - 4].toString(),
+        //     analogs[i - 4].getDegrees());
 
-        SmartDashboard.putNumber("SteerCurEnc" + ModuleOrder.values()[i - 4].toString(),
-            encoders[i].getPosition() / 55);
+        // SmartDashboard.putNumber("SteerCurEnc" + ModuleOrder.values()[i - 4].toString(),
+        //     encoders[i].getPosition() / 55);
       }
     }
   }
