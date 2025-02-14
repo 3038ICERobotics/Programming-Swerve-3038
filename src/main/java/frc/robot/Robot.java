@@ -73,13 +73,13 @@ public class Robot extends TimedRobot {
   public ClosedLoopConfig VelocityLoopConfig = new ClosedLoopConfig();
   public ClosedLoopConfig SteeringLoopConfig = new ClosedLoopConfig();
   public SparkBaseConfig SteeringBaseConfig = new SparkMaxConfig();
-  public SparkBaseConfig VelocityBaseConfig = new SparkMaxConfig();
+   SparkBaseConfig VelocityBaseConfig[] = new SparkBaseConfig[4];
 
   // Constants used to translate RPM to robot speed
   private final int RotationsPerMeter = 27;
   private final int SecondsPerMinute = 60;
-  private final double MaxDriveSpeed = .1;
-  private final double MaxTurnSpeed = .1;
+  private final double MaxDriveSpeed = .5;
+  private final double MaxTurnSpeed = .5;
   double VoltageFL = 0;
   double PositionFL = 0;
   double VoltageFR = 0;
@@ -209,7 +209,7 @@ public class Robot extends TimedRobot {
     for (int i = 0; i < 8; i++) {
       // PIDControllers[i] = motors[i].getClosedLoopController();
       encoders[i] = motors[i].getEncoder();
-      encoders[i].setPosition(0);
+      // encoders[i].setPosition(0);
       if (i > 3) {
       }
     }
@@ -242,12 +242,17 @@ public class Robot extends TimedRobot {
     SteeringLoopConfig.pidf(Prop, Int, Der, FeedForward, ClosedLoopSlot.kSlot0);
     SteeringLoopConfig.outputRange(MinOutput, MaxOutput, ClosedLoopSlot.kSlot0);
 
-    VelocityBaseConfig.apply(VelocityLoopConfig);
-    VelocityBaseConfig.inverted(false);
+    
     SteeringBaseConfig.apply(SteeringLoopConfig);
     for (int i = 0; i < 8; i++) {
       if (i < 4) {
-        motors[i].configure(VelocityBaseConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        VelocityBaseConfig[i] = new SparkMaxConfig();
+        VelocityBaseConfig[i].apply(VelocityLoopConfig);
+      VelocityBaseConfig[i].inverted(false);
+      if(i==1){
+        VelocityBaseConfig[i].inverted(true);
+      }
+        motors[i].configure(VelocityBaseConfig[i], ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
       } else {
         motors[i].configure(SteeringBaseConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
       }
@@ -265,7 +270,10 @@ public class Robot extends TimedRobot {
     for (int i = 0; i < 4; i++) {
       analogs[i].offset = 0;
       RelativeOffset[i] = analogs[i].offset * 360 / analogs[i].maxVolt;
+      analogs[i].offset = analogs[i].getRotation() * -55;
+      encoders[i + 4].setPosition(analogs[i].getRotation() * -55);
     }
+
   }
 
   /**
@@ -280,6 +288,14 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
+    for (int i = 0; i < 4; i++) {
+      SmartDashboard.putNumber("Relative Rotations" + ModuleOrder.values()[i].toString(),
+          encoders[i + 4].getPosition() * 360 / 55);
+      SmartDashboard.putNumber("Absolute Rotations" + ModuleOrder.values()[i].toString(), analogs[i].getDegrees());
+      SmartDashboard.putNumber("Relative Offset" + ModuleOrder.values()[i].toString(), analogs[i].offset * 360 / 55);
+
+      
+    }
     // [VARIABLES: 54700 max RPM, ~27 rotations per meter, 60 seconds per minute,
     // ~3.5mps for max speed]
   }
@@ -430,7 +446,7 @@ public class Robot extends TimedRobot {
 
     for (int i = 0; i < 8; i++) {
       if (i < 4) {
-        motors[i].configure(VelocityBaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        motors[i].configure(VelocityBaseConfig[i], ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
       } else {
         motors[i].configure(SteeringBaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
       }
@@ -455,8 +471,8 @@ public class Robot extends TimedRobot {
     };
 
     for (int i = 0; i < 8; i++) {
-      if(i>3)
-        setPoints[i]=((setPoints[i]/*-analogs[i-4].getZeroRotations()+5*/)*55)%55;//+encoders[i].getPosition();
+      if (i > 3)
+        setPoints[i] = ((setPoints[i]/*-analogs[i-4].getZeroRotations()+5*/) * 55) % 55;// +encoders[i].getPosition();
       if (Math.abs(setPoints[i]) < .1) {
         setPoints[i] = 0;
       }
@@ -471,15 +487,19 @@ public class Robot extends TimedRobot {
         SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i - 4].toString(),
             PIDControllers[i].setReference(setPoints[i],
                 SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward).toString());
-        // SmartDashboard.putNumber("TargetSteer" + ModuleOrder.values()[i - 4].toString(),
-        //     setPoints[i] * 360 / (2 * Math.PI));
-        // SmartDashboard.putNumber("SteerCurAnalogOffset" + ModuleOrder.values()[i - 4].toString(),
-        //     RelativeOffset[i - 4]);
-        // SmartDashboard.putNumber("SteerCurAnalogDirect" + ModuleOrder.values()[i - 4].toString(),
-        //     analogs[i - 4].getDegrees());
+        // SmartDashboard.putNumber("TargetSteer" + ModuleOrder.values()[i -
+        // 4].toString(),
+        // setPoints[i] * 360 / (2 * Math.PI));
+        // SmartDashboard.putNumber("SteerCurAnalogOffset" + ModuleOrder.values()[i -
+        // 4].toString(),
+        // RelativeOffset[i - 4]);
+        // SmartDashboard.putNumber("SteerCurAnalogDirect" + ModuleOrder.values()[i -
+        // 4].toString(),
+        // analogs[i - 4].getDegrees());
 
-        // SmartDashboard.putNumber("SteerCurEnc" + ModuleOrder.values()[i - 4].toString(),
-        //     encoders[i].getPosition() / 55);
+        // SmartDashboard.putNumber("SteerCurEnc" + ModuleOrder.values()[i -
+        // 4].toString(),
+        // encoders[i].getPosition() / 55);
       }
     }
   }
