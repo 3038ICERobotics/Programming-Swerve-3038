@@ -324,13 +324,13 @@ public class Robot extends TimedRobot {
   public SwerveModuleState angleMinimize(double CurrentAngle, SwerveModuleState TargetState, int ModuleIndex) {
     double newAngle = TargetState.angle.getDegrees() - CurrentAngle;
 
-    if (newAngle > 90) {
-      newAngle -= 180;
-      TargetState.speedMetersPerSecond *= -1;
-    } else if (newAngle < -90) {
-      newAngle += 180;
-      TargetState.speedMetersPerSecond *= -1;
-    }
+    // if (newAngle > 90) {
+    //   newAngle -= 180;
+    //   TargetState.speedMetersPerSecond *= -1;
+    // } else if (newAngle < -90) {
+    //   newAngle += 180;
+    //   TargetState.speedMetersPerSecond *= -1;
+    // }
     TargetState.angle = new Rotation2d((CurrentAngle + newAngle) * Math.PI / 180);
 
     if (ModuleIndex == ModuleOrder.BL.ordinal()) {
