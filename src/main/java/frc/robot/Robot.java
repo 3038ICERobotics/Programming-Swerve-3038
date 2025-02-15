@@ -44,10 +44,10 @@ import com.revrobotics.spark.SparkAbsoluteEncoder;
 import com.revrobotics.spark.SparkAnalogSensor;
 import com.revrobotics.config.BaseConfig;
 
-//   [SWERVE IS IN METERS]   //
+//   [SWERVE IS IN METERS]   
 // BASE: 0.711m x 0.711m
 // WHEELS FROM CENTER: 0.285m
-//    [FRONT IS LIGHT]    //
+//    [FRONT IS LIGHT]    
 // FLEFT: (0.285, 0.285)
 // FRIGHT: (0.285, -0.285)
 // BLEFT: (-0.285, 0.285)
@@ -105,6 +105,8 @@ public class Robot extends TimedRobot {
   SparkMax BackLeftSteer = new SparkMax(8, MotorType.kBrushless);
   SparkMax BackRightDrive = new SparkMax(14, MotorType.kBrushless);
   SparkMax BackRightSteer = new SparkMax(2, MotorType.kBrushless);
+
+  //Motor Array
   SparkMax[] motors = {
       FrontLeftDrive,
       BackLeftDrive,
@@ -115,9 +117,8 @@ public class Robot extends TimedRobot {
       FrontRightSteer,
       BackRightSteer };
 
-  // Array
-  private SparkClosedLoopController[] PIDControllers = // {null,null,null,null,null,null,null,null};
-      {
+  // PID Controllers Array
+  private SparkClosedLoopController[] PIDControllers = { // {null,null,null,null,null,null,null,null};
           FrontLeftDrive.getClosedLoopController(), BackLeftDrive.getClosedLoopController(),
           FrontRightDrive.getClosedLoopController(), BackRightDrive.getClosedLoopController(),
           FrontLeftSteer.getClosedLoopController(), BackLeftSteer.getClosedLoopController(),
@@ -134,8 +135,7 @@ public class Robot extends TimedRobot {
 
   // Initialize Encoders
   RelativeEncoder FrontLeftDriveEncoder = FrontLeftDrive.getEncoder();
-  RelativeEncoder FrontLeftSteerEncoder = FrontLeftSteer.getEncoder(); // I don't think the absolute encoder works for
-                                                                       // this - James
+  RelativeEncoder FrontLeftSteerEncoder = FrontLeftSteer.getEncoder(); // I don't think the absolute encoder works for this - James
   RelativeEncoder FrontRightDriveEncoder = FrontRightDrive.getEncoder();
   RelativeEncoder FrontRightSteerEncoder = FrontRightSteer.getEncoder();
   RelativeEncoder BackLeftDriveEncoder = BackLeftDrive.getEncoder();
@@ -144,6 +144,7 @@ public class Robot extends TimedRobot {
   RelativeEncoder BackRightSteerEncoder = BackRightSteer.getEncoder();
   RelativeEncoder[] encoders = new RelativeEncoder[8];// {null,null,null,null,null,null,null,null};
 
+  //Initialize Analogs
   SparkAnalogSensor FrontLeftAnalog = FrontLeftSteer.getAnalog(); // Range 0-2.22 0 is 1.6
   SparkAnalogSensor FrontRightAnalog = FrontRightSteer.getAnalog();
   SparkAnalogSensor BackLeftAnalog = BackLeftSteer.getAnalog();
@@ -164,8 +165,7 @@ public class Robot extends TimedRobot {
   Translation2d FrontRightDriveLocation = new Translation2d(0.285, -0.285);
   Translation2d BackLeftDriveLocation = new Translation2d(-0.285, 0.285);
   Translation2d BackRightDriveLocation = new Translation2d(-0.285, -0.285);
-  SwerveDriveKinematics Kinematics = new SwerveDriveKinematics(FrontLeftDriveLocation, BackLeftDriveLocation,
-      FrontRightDriveLocation, BackRightDriveLocation);
+  SwerveDriveKinematics Kinematics = new SwerveDriveKinematics(FrontLeftDriveLocation, BackLeftDriveLocation, FrontRightDriveLocation, BackRightDriveLocation);
 
   SwerveModuleState frontLeft = new SwerveModuleState();
   SwerveModuleState frontRight = new SwerveModuleState();
@@ -180,15 +180,15 @@ public class Robot extends TimedRobot {
 
   double BLSTuningSetpoint = 0.0;
 
-  // // Convert to chassis speeds
+  // Convert to chassis speeds
   ChassisSpeeds chassisSpeeds = Kinematics.toChassisSpeeds(frontLeft, frontRight, backLeft, backRight);
 
-  // // Getting individual speeds
+  // Getting individual speeds
   double forward = chassisSpeeds.vxMetersPerSecond;
   double sideways = chassisSpeeds.vyMetersPerSecond;
   double angular = chassisSpeeds.omegaRadiansPerSecond;
 
-  //
+  //Offset Array
   private double[] RelativeOffset = {
       0,
       0,
@@ -218,6 +218,7 @@ public class Robot extends TimedRobot {
     analogs[2] = new AnalogContainer(motors[6].getAnalog(), 2.27, 1.78);
     analogs[3] = new AnalogContainer(motors[7].getAnalog(), 2.20, 0.12);
 
+    //PID Values
     Prop = 1;// 1; //P = 0.000170
     Int = 0.5; // 0.5; //I = 0.000001
     Der = 0.1;// 0.1; //D = 0.000020
@@ -236,13 +237,14 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Min Output", MinOutput);
     SmartDashboard.putNumber("BLSetpoint", 0);
 
+    //Loop Configs
     VelocityLoopConfig.pidf(0.000170, 0.000001, 0.000020, 0.000001, ClosedLoopSlot.kSlot0);
     VelocityLoopConfig.outputRange(MinOutput, MaxOutput, ClosedLoopSlot.kSlot0);
 
     SteeringLoopConfig.pidf(Prop, Int, Der, FeedForward, ClosedLoopSlot.kSlot0);
     SteeringLoopConfig.outputRange(MinOutput, MaxOutput, ClosedLoopSlot.kSlot0);
 
-    
+    //Applying Configs
     SteeringBaseConfig.apply(SteeringLoopConfig);
     for (int i = 0; i < 8; i++) {
       if (i < 4) {
@@ -262,7 +264,6 @@ public class Robot extends TimedRobot {
     RelativeOffset[ModuleOrder.BL.ordinal()] = 0;
     RelativeOffset[ModuleOrder.FR.ordinal()] = 0;
     RelativeOffset[ModuleOrder.BR.ordinal()] = 0;
-
   }
 
   public void AnalogInit() {
@@ -273,7 +274,6 @@ public class Robot extends TimedRobot {
       analogs[i].offset = analogs[i].getRotation() * -55;
       encoders[i + 4].setPosition(analogs[i].getRotation() * -55);
     }
-
   }
 
   /**
@@ -292,23 +292,23 @@ public class Robot extends TimedRobot {
       SmartDashboard.putNumber("Relative Rotations" + ModuleOrder.values()[i].toString(),
           encoders[i + 4].getPosition() * 360 / 55);
       SmartDashboard.putNumber("Absolute Rotations" + ModuleOrder.values()[i].toString(), analogs[i].getDegrees());
-      SmartDashboard.putNumber("Relative Offset" + ModuleOrder.values()[i].toString(), analogs[i].offset * 360 / 55);
-
-      
+      SmartDashboard.putNumber("Relative Offset" + ModuleOrder.values()[i].toString(), analogs[i].offset * 360 / 55); 
     }
     // [VARIABLES: 54700 max RPM, ~27 rotations per meter, 60 seconds per minute,
     // ~3.5mps for max speed]
   }
 
   private void PerformKinematics() {
+
+    //Swerve Speed variables
     ChassisSpeeds speeds = new ChassisSpeeds(TranslateX, TranslateY, TranslateRotation);
+
     // Convert to module states
     SwerveModuleState[] moduleStates = Kinematics.toSwerveModuleStates(speeds);
 
     double[] currentAngles = new double[4];
     for (int i = 0; i < 4; i++) {
       currentAngles[i] = analogs[i].getDegrees();
-
       OptimizedStates[i] = angleMinimize(0, moduleStates[i]);
     }
 
@@ -422,16 +422,12 @@ public class Robot extends TimedRobot {
     double MaxOut = SmartDashboard.getNumber("Max Output", 1);
     double MinOut = SmartDashboard.getNumber("Min Output", -1);
 
+    //Steering Loop PID Values
     SteeringLoopConfig.p(P, ClosedLoopSlot.kSlot0);
-
     SteeringLoopConfig.i(I, ClosedLoopSlot.kSlot0);
-
     SteeringLoopConfig.d(D, ClosedLoopSlot.kSlot0);
-
     SteeringLoopConfig.iZone(IZ, ClosedLoopSlot.kSlot0);
-
     SteeringLoopConfig.velocityFF(FF, ClosedLoopSlot.kSlot0);
-
     SteeringLoopConfig.outputRange(MaxOut, MinOut, ClosedLoopSlot.kSlot0);
 
     SteeringBaseConfig.encoder
@@ -461,13 +457,9 @@ public class Robot extends TimedRobot {
         OptimizedStates[2].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
         OptimizedStates[3].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
         OptimizedStates[0].angle.getRotations(),
-
         OptimizedStates[1].angle.getRotations(),
-
         OptimizedStates[2].angle.getRotations(),
-
         OptimizedStates[3].angle.getRotations()
-
     };
 
     for (int i = 0; i < 8; i++) {
