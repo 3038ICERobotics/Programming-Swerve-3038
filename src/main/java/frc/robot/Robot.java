@@ -307,18 +307,21 @@ public class Robot extends TimedRobot {
     SwerveModuleState[] moduleStates = Kinematics.toSwerveModuleStates(speeds);
 
     double[] currentAngles = new double[4];
+
     for (int i = 0; i < 4; i++) {
       currentAngles[i] = analogs[i].getDegrees();
-      OptimizedStates[i] = angleMinimize(0, moduleStates[i]);
+      OptimizedStates[i] = angleMinimize(currentAngles[i], moduleStates[i], i);
     }
-
+    SmartDashboard.putNumber("BackLeftTestyThingy", moduleStates[ModuleOrder.BL.ordinal()].angle.getDegrees());
+    SmartDashboard.putNumber("OptimizedBackLeftAngle", OptimizedStates[ModuleOrder.BL.ordinal()].angle.getDegrees());
+    SmartDashboard.putNumber("CurrentAngle", currentAngles[ModuleOrder.BL.ordinal()]);
     // Pass in all 4 optimized swerve module states as a list to
     // Kinematics.desaturateWheelSpeeds
     // to normalize the speeds against the max
     Kinematics.desaturateWheelSpeeds(OptimizedStates, MaxDriveSpeed);
   }
 
-  public SwerveModuleState angleMinimize(double CurrentAngle, SwerveModuleState TargetState) {
+  public SwerveModuleState angleMinimize(double CurrentAngle, SwerveModuleState TargetState, int ModuleIndex) {
     double newAngle = TargetState.angle.getDegrees() - CurrentAngle;
 
     if (newAngle > 90) {
@@ -329,8 +332,13 @@ public class Robot extends TimedRobot {
       TargetState.speedMetersPerSecond *= -1;
     }
     TargetState.angle = new Rotation2d((CurrentAngle + newAngle) * Math.PI / 180);
-    return TargetState;
-  }
+
+    if (ModuleIndex == ModuleOrder.BL.ordinal()) {
+    SmartDashboard.putNumber("NewAngle", newAngle);
+    SmartDashboard.putNumber("TargetStateThing", TargetState.angle.getDegrees());
+    }
+     return TargetState;
+   }
 
   /**
    * This autonomous (along with the chooser code above) shows how to select
@@ -406,7 +414,6 @@ public class Robot extends TimedRobot {
     applyDrive();
     SmartDashboard.putNumber("Speed", frontLeftOptimized.speedMetersPerSecond);
     SmartDashboard.putNumber("TestEncoder", FrontLeftSteerEncoder.getPosition());
-
   }
 
   private void PIDTuning() {
@@ -452,14 +459,14 @@ public class Robot extends TimedRobot {
   private void applyDrive() {
     boolean toggle = SmartDashboard.getBoolean("toggle", false);
     double[] setPoints = {
-        OptimizedStates[0].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
-        OptimizedStates[1].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
-        OptimizedStates[2].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
-        OptimizedStates[3].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
-        OptimizedStates[0].angle.getRotations(),
-        OptimizedStates[1].angle.getRotations(),
-        OptimizedStates[2].angle.getRotations(),
-        OptimizedStates[3].angle.getRotations()
+      OptimizedStates[0].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
+      OptimizedStates[1].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
+      OptimizedStates[2].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
+      OptimizedStates[3].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
+      OptimizedStates[0].angle.getRotations(),
+      OptimizedStates[1].angle.getRotations(),
+      OptimizedStates[2].angle.getRotations(),
+      OptimizedStates[3].angle.getRotations()
     };
 
     for (int i = 0; i < 8; i++) {
@@ -472,13 +479,10 @@ public class Robot extends TimedRobot {
 
     for (int i = 0; i < 8; i++) {
       if (i < 4) { // drive
-        SmartDashboard.putString("TargetDrive Status" + ModuleOrder.values()[i].toString(), PIDControllers[i]
-            .setReference(setPoints[i], SparkMax.ControlType.kVelocity, ClosedLoopSlot.kSlot0, FeedForward).toString());
+        SmartDashboard.putString("TargetDrive Status" + ModuleOrder.values()[i].toString(), PIDControllers[i].setReference(setPoints[i], SparkMax.ControlType.kVelocity, ClosedLoopSlot.kSlot0, FeedForward).toString());
         SmartDashboard.putNumber("TargetDrive" + ModuleOrder.values()[i].toString(), setPoints[i]);
       } else {
-        SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i - 4].toString(),
-            PIDControllers[i].setReference(setPoints[i],
-                SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward).toString());
+        SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i - 4].toString(), PIDControllers[i].setReference(setPoints[i], SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward).toString());
         // SmartDashboard.putNumber("TargetSteer" + ModuleOrder.values()[i -
         // 4].toString(),
         // setPoints[i] * 360 / (2 * Math.PI));
