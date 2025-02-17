@@ -246,6 +246,7 @@ public class Robot extends TimedRobot {
 
     //Applying Configs
     SteeringBaseConfig.apply(SteeringLoopConfig);
+    SteeringBaseConfig.signals.analogPositionPeriodMs(10);
     for (int i = 0; i < 8; i++) {
       if (i < 4) {
         VelocityBaseConfig[i] = new SparkMaxConfig();
@@ -307,12 +308,12 @@ public class Robot extends TimedRobot {
     SwerveModuleState[] moduleStates = Kinematics.toSwerveModuleStates(speeds);
 
     double[] currentAngles = new double[4];
+    SmartDashboard.putNumber("BackLeftTestyThingy", moduleStates[ModuleOrder.BL.ordinal()].angle.getDegrees());
 
     for (int i = 0; i < 4; i++) {
-      currentAngles[i] = analogs[i].getDegrees();
+      currentAngles[i] = (180+analogs[i].getDegrees())%360-180;
       OptimizedStates[i] = angleMinimize(currentAngles[i], moduleStates[i], i);
     }
-    SmartDashboard.putNumber("BackLeftTestyThingy", moduleStates[ModuleOrder.BL.ordinal()].angle.getDegrees());
     SmartDashboard.putNumber("OptimizedBackLeftAngle", OptimizedStates[ModuleOrder.BL.ordinal()].angle.getDegrees());
     SmartDashboard.putNumber("CurrentAngle", currentAngles[ModuleOrder.BL.ordinal()]);
     // Pass in all 4 optimized swerve module states as a list to
@@ -322,19 +323,26 @@ public class Robot extends TimedRobot {
   }
 
   public SwerveModuleState angleMinimize(double CurrentAngle, SwerveModuleState TargetState, int ModuleIndex) {
-    double newAngle = TargetState.angle.getDegrees() - CurrentAngle;
+    
+    CurrentAngle=CurrentAngle;
+  double deltaAngle = TargetState.angle.getDegrees() - (CurrentAngle);
+    /* Issue is that the current angle is not consistent with the target angle.
+       compare smart dashboard plots of the Target angle, current angle, and new angle
+       We need to make sure they are consistent before calculating a delta.
+    */
+    SmartDashboard.putNumber("deltaAngle", deltaAngle);
 
-    // if (newAngle > 90) {
-    //   newAngle -= 180;
+    // if (deltaAngle > 90) {
+    //   deltaAngle -= 180;
     //   TargetState.speedMetersPerSecond *= -1;
-    // } else if (newAngle < -90) {
-    //   newAngle += 180;
+    // } else if (deltaAngle < -90) {
+    //   deltaAngle += 180;
     //   TargetState.speedMetersPerSecond *= -1;
     // }
-    TargetState.angle = new Rotation2d((CurrentAngle + newAngle) * Math.PI / 180);
+    TargetState.angle = new Rotation2d(((CurrentAngle + deltaAngle)%360) * Math.PI / 180);
 
     if (ModuleIndex == ModuleOrder.BL.ordinal()) {
-    SmartDashboard.putNumber("NewAngle", newAngle);
+    SmartDashboard.putNumber("NewAngle", deltaAngle);
     SmartDashboard.putNumber("TargetStateThing", TargetState.angle.getDegrees());
     }
      return TargetState;
