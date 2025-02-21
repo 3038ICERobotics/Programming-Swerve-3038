@@ -78,8 +78,9 @@ public class Robot extends TimedRobot {
   // Constants used to translate RPM to robot speed
   private final int RotationsPerMeter = 27;
   private final int SecondsPerMinute = 60;
-  private final double MaxDriveSpeed = .5;
-  private final double MaxTurnSpeed = .5;
+  //MaxDriveSpeed and MaxTurnSpeed is in meters per second
+  private final double MaxDriveSpeed = 2;
+  private final double MaxTurnSpeed = 3;
   double VoltageFL = 0;
   double PositionFL = 0;
   double VoltageFR = 0;
