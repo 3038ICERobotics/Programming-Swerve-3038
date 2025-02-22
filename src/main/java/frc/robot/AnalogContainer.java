@@ -7,15 +7,19 @@ public class AnalogContainer {
     public double maxVolt;
     public double zeroVolt;
     public double offset;
+    public double CalculatedAngle;
+    public double CalculatedPosition;
 
     public AnalogContainer(SparkAnalogSensor s, double max, double zero) {
         sensor = s;
         maxVolt = max;
         zeroVolt = zero;
+        CalculatedAngle = 0;
+        CalculatedPosition = 0;
     }
 
     public double getDegrees() {
-        return getRotation() * 360;
+        return (((getRotation() * 360) + 180) % 360 ) - 180;
     }
 
     public double getRadians() {
@@ -32,5 +36,21 @@ public class AnalogContainer {
 
     public double getRotation() {
         return ((maxVolt - zeroVolt + sensor.getPosition()) % maxVolt) / maxVolt;// (sensor.getPosition()-offset+maxVolt)%maxVolt;//-maxVolt/2;
+    }
+
+    public void setCalculatedAngle(double angle) {
+        CalculatedAngle = angle;
+    }
+
+    public void setCalculatedPosition(double position) {
+        CalculatedPosition = position;
+    }
+
+    public double getCalculatedAngle() {
+        return CalculatedAngle;
+    }
+
+    public double getCalculatedPosition() {
+        return CalculatedPosition;
     }
 }
