@@ -265,7 +265,8 @@ public class SwerveClass {
             4].toString(), PIDControllers[i].setReference(setPoints[i],
                 SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0,
                 FeedForward).toString());
-        absoluteDegreeCalc[i-4]=OptimizedStates[i-4].angle.getDegrees();
+        relativePositionCalc[i-4]=setPoints[i];
+        absoluteDegreeCalc[i-4]=(setPoints[i]*360/55)%360;
         // SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i -
         // 4].toString(),
         // PIDControllers[i].setReference(setPoints[i] + encoders[i].getPosition(),
