@@ -26,6 +26,9 @@ public class SwerveClass {
   Double TranslateY = 0.0;
   Double TranslateRotation = 0.0;
 
+  double[] absoluteDegreeCalc = new double[4];
+  double[] relativePositionCalc = new double[4];
+
   // Configuration configurations
   public ClosedLoopConfig VelocityLoopConfig = new ClosedLoopConfig();
   public ClosedLoopConfig SteeringLoopConfig = new ClosedLoopConfig();
@@ -214,6 +217,8 @@ public class SwerveClass {
       RelativeOffset[i] = analogs[i].offset * 360 / analogs[i].maxVolt;
       analogs[i].offset = analogs[i].getRotation() * -55;
       encoders[i + 4].setPosition(analogs[i].getRotation() * -55);
+      relativePositionCalc[i] = analogs[i].offset;
+      absoluteDegreeCalc[i] = analogs[i].getDegrees();
     }
   }
 
@@ -244,7 +249,7 @@ public class SwerveClass {
 
     for (int i = 0; i < 8; i++) {
       if (i > 3)
-        setPoints[i] = ((setPoints[i]/*-analogs[i-4].getZeroRotations()+5*/) * 55) % 55;// +encoders[i].getPosition();
+        setPoints[i] = ((setPoints[i]/*-analogs[i-4].getZeroRotations()+5*/) * 55);// +encoders[i].getPosition();
       if (Math.abs(setPoints[i]) < .1) {
         setPoints[i] = 0;
       }
@@ -260,9 +265,12 @@ public class SwerveClass {
             4].toString(), PIDControllers[i].setReference(setPoints[i],
                 SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0,
                 FeedForward).toString());
-        // SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i - 4].toString(),
-        //     PIDControllers[i].setReference(setPoints[i] + encoders[i].getPosition(), SparkMax.ControlType.kPosition,
-        //         ClosedLoopSlot.kSlot0, FeedForward).toString());
+        absoluteDegreeCalc[i-4]=OptimizedStates[i-4].angle.getDegrees();
+        // SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i -
+        // 4].toString(),
+        // PIDControllers[i].setReference(setPoints[i] + encoders[i].getPosition(),
+        // SparkMax.ControlType.kPosition,
+        // ClosedLoopSlot.kSlot0, FeedForward).toString());
         // SmartDashboard.putNumber("TargetSteer" + ModuleOrder.values()[i -
         // 4].toString(),
         // setPoints[i] * 360 / (2 * Math.PI));
@@ -292,13 +300,13 @@ public class SwerveClass {
     SmartDashboard.putNumber("BackLeftTestyThingy", moduleStates[ModuleOrder.BL.ordinal()].angle.getDegrees());
 
     for (int i = 0; i < 4; i++) {
-    currentAngles[i] = (180+analogs[i].getDegrees())%360-180;
-    OptimizedStates[i] = angleMinimize(currentAngles[i], moduleStates[i], i);
+      // currentAngles[i] = (180 + analogs[i].getDegrees()) % 360 - 180;;
+      OptimizedStates[i] = angleMinimize(absoluteDegreeCalc[i], moduleStates[i], i);
     }
     // angleMinimize(moduleStates);
     // OptimizedStates = moduleStates;
     SmartDashboard.putNumber("OptimizedBackLeftAngle", OptimizedStates[ModuleOrder.BL.ordinal()].angle.getDegrees());
-    SmartDashboard.putNumber("CurrentAngle", currentAngles[ModuleOrder.BL.ordinal()]);
+    SmartDashboard.putNumber("CurrentAngle", absoluteDegreeCalc[ModuleOrder.BL.ordinal()]);
     // Pass in all 4 optimized swerve module states as a list to
     // Kinematics.desaturateWheelSpeeds
     // to normalize the speeds against the max
@@ -328,8 +336,6 @@ public class SwerveClass {
   }
 
   public SwerveModuleState angleMinimize(double CurrentAngle, SwerveModuleState TargetState, int ModuleIndex) {
-
-    CurrentAngle = CurrentAngle;
     double deltaAngle = TargetState.angle.getDegrees() - (CurrentAngle);
     /*
      * Issue is that the current angle is not consistent with the target angle.

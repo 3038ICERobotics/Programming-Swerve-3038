@@ -36,13 +36,12 @@ import frc.robot.SwerveClass.ModuleOrder;
  * this project, you must also update the Main.java file in the project.
  */
 public class Robot extends TimedRobot {
- 
+
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-  
   // SparkAnalogSensor[] analogs = new SparkAnalogSensor[4];
   // //{null,null,null,null};
 
@@ -52,8 +51,6 @@ public class Robot extends TimedRobot {
   double JoystickTolerance = 0.06;
 
   SwerveClass chassis = new SwerveClass();
-
-  
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -66,10 +63,8 @@ public class Robot extends TimedRobot {
     SmartDashboard.putData("Auto choices", m_chooser);
 
     chassis.init();
-    
-  }
 
-  
+  }
 
   /**
    * This function is called every 20 ms, no matter the mode. Use this for items
@@ -85,17 +80,15 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
     for (int i = 0; i < 4; i++) {
       SmartDashboard.putNumber("Relative Rotations" + ModuleOrder.values()[i].toString(),
-      chassis.encoders[i + 4].getPosition() * 360 / 55);
-      SmartDashboard.putNumber("Absolute Rotations" + ModuleOrder.values()[i].toString(), chassis.analogs[i].getDegrees());
-      SmartDashboard.putNumber("Relative Offset" + ModuleOrder.values()[i].toString(), chassis.analogs[i].offset * 360 / 55); 
+          chassis.encoders[i + 4].getPosition() * 360 / 55);
+      SmartDashboard.putNumber("Absolute Rotations" + ModuleOrder.values()[i].toString(),
+          chassis.analogs[i].getDegrees());
+      SmartDashboard.putNumber("Relative Offset" + ModuleOrder.values()[i].toString(),
+          chassis.analogs[i].offset * 360 / 55);
     }
     // [VARIABLES: 54700 max RPM, ~27 rotations per meter, 60 seconds per minute,
     // ~3.5mps for max speed]
   }
-
-  
-  
-  
 
   /**
    * This autonomous (along with the chooser code above) shows how to select
@@ -138,10 +131,14 @@ public class Robot extends TimedRobot {
   /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() {
-    // SmartDashboard.putNumber("frontLeft Zero", RelativeOffset[ModuleOrder.FL.ordinal()]);// -.25
-    // SmartDashboard.putNumber("frontRight Zero", RelativeOffset[ModuleOrder.FR.ordinal()]);// .9
-    // SmartDashboard.putNumber("backLeft Zero", RelativeOffset[ModuleOrder.BL.ordinal()]);// -.05
-    // SmartDashboard.putNumber("BackRight Zero", RelativeOffset[ModuleOrder.BR.ordinal()]);// .6
+    // SmartDashboard.putNumber("frontLeft Zero",
+    // RelativeOffset[ModuleOrder.FL.ordinal()]);// -.25
+    // SmartDashboard.putNumber("frontRight Zero",
+    // RelativeOffset[ModuleOrder.FR.ordinal()]);// .9
+    // SmartDashboard.putNumber("backLeft Zero",
+    // RelativeOffset[ModuleOrder.BL.ordinal()]);// -.05
+    // SmartDashboard.putNumber("BackRight Zero",
+    // RelativeOffset[ModuleOrder.BR.ordinal()]);// .6
     chassis.AnalogInit();
 
   }
@@ -158,16 +155,12 @@ public class Robot extends TimedRobot {
     if (Math.abs(TranslateX) < JoystickTolerance)
       TranslateX = 0.0;
     if (Math.abs(TranslateY) < JoystickTolerance)
-      TranslateY = 0.0;
     if (Math.abs(TranslateRotation) < JoystickTolerance)
       TranslateRotation = 0.0;
 
-   chassis.drive(TranslateY * chassis.MaxDriveSpeed, TranslateX * chassis.MaxDriveSpeed, TranslateRotation * chassis.MaxTurnSpeed);
+    chassis.drive(TranslateY * chassis.MaxDriveSpeed, TranslateX * chassis.MaxDriveSpeed,
+        TranslateRotation * chassis.MaxTurnSpeed);
   }
-
-  
-
-  
 
   // This is update all for steering directions and update all for drive
   // velocities
