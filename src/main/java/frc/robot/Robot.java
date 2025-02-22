@@ -311,10 +311,12 @@ public class Robot extends TimedRobot {
     double[] currentAngles = new double[4];
     SmartDashboard.putNumber("BackLeftTestyThingy", moduleStates[ModuleOrder.BL.ordinal()].angle.getDegrees());
 
-    for (int i = 0; i < 4; i++) {
-      currentAngles[i] = (180+analogs[i].getDegrees())%360-180;
-      OptimizedStates[i] = angleMinimize(currentAngles[i], moduleStates[i], i);
-    }
+    // for (int i = 0; i < 4; i++) {
+    //   currentAngles[i] = (180+analogs[i].getDegrees())%360-180;
+    //   OptimizedStates[i] = angleMinimize(currentAngles[i], moduleStates[i], i);
+    // }
+    angleMinimize(moduleStates);
+    OptimizedStates = moduleStates;
     SmartDashboard.putNumber("OptimizedBackLeftAngle", OptimizedStates[ModuleOrder.BL.ordinal()].angle.getDegrees());
     SmartDashboard.putNumber("CurrentAngle", currentAngles[ModuleOrder.BL.ordinal()]);
     // Pass in all 4 optimized swerve module states as a list to
@@ -322,10 +324,29 @@ public class Robot extends TimedRobot {
     // to normalize the speeds against the max
     Kinematics.desaturateWheelSpeeds(OptimizedStates, MaxDriveSpeed);
   }
-
+  private void angleMinimize(SwerveModuleState[] mStates) {
+    double deltaAngle, direction;
+    for (int i = 0; i < 4; i++) {
+        deltaAngle = mStates[i].angle.getDegrees() - analogs[i].getDegrees();
+        direction = deltaAngle > 0 ? 1 : -1;
+        if (360 - Math.abs(deltaAngle) < Math.abs(deltaAngle)) {
+            /*
+             * This means that it is a shorter distance to rotate in
+             * the opposite direction, for the complement of the angle.
+             */
+            deltaAngle = (360 - Math.abs(deltaAngle)) * (-direction);
+        }
+        /*
+         * since we are storing the delta angle in mState
+         * instead of the absolute angle we will need to add it to the
+         * current steerEncoder.position before the setreference.
+         */
+        mStates[i].angle = new Rotation2d(deltaAngle * 180 / Math.PI);
+    }
+}
   public SwerveModuleState angleMinimize(double CurrentAngle, SwerveModuleState TargetState, int ModuleIndex) {
     
-    CurrentAngle=CurrentAngle;
+    CurrentAngle = CurrentAngle;
   double deltaAngle = TargetState.angle.getDegrees() - (CurrentAngle);
     /* Issue is that the current angle is not consistent with the target angle.
        compare smart dashboard plots of the Target angle, current angle, and new angle
@@ -491,7 +512,7 @@ public class Robot extends TimedRobot {
         SmartDashboard.putString("TargetDrive Status" + ModuleOrder.values()[i].toString(), PIDControllers[i].setReference(setPoints[i], SparkMax.ControlType.kVelocity, ClosedLoopSlot.kSlot0, FeedForward).toString());
         SmartDashboard.putNumber("TargetDrive" + ModuleOrder.values()[i].toString(), setPoints[i]);
       } else {
-        SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i - 4].toString(), PIDControllers[i].setReference(setPoints[i], SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward).toString());
+        SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i - 4].toString(), PIDControllers[i].setReference(setPoints[i] + encoders[i].getPosition(), SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward).toString());
         // SmartDashboard.putNumber("TargetSteer" + ModuleOrder.values()[i -
         // 4].toString(),
         // setPoints[i] * 360 / (2 * Math.PI));
