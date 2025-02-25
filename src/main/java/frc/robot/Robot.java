@@ -163,10 +163,7 @@ public class Robot extends TimedRobot {
   Double TranslateRotation = 0.0;
 
   // Swerve Kinematics
-  Translation2d FrontLeftDriveLocation = new Translation2d(0.285, 0.285);
-  Translation2d FrontRightDriveLocation = new Translation2d(0.285, -0.285);
-  Translation2d BackLeftDriveLocation = new Translation2d(-0.285, 0.285);
-  Translation2d BackRightDriveLocation = new Translation2d(-0.285, -0.285);
+  Translation2d BackRightDriveLocation = new Translation2d(0.285, -0.285);
   SwerveDriveKinematics Kinematics = new SwerveDriveKinematics(FrontLeftDriveLocation, BackLeftDriveLocation, FrontRightDriveLocation, BackRightDriveLocation);
 
   SwerveModuleState frontLeft = new SwerveModuleState();
@@ -276,6 +273,7 @@ public class Robot extends TimedRobot {
       RelativeOffset[i] = analogs[i].offset * 360 / analogs[i].maxVolt;
       analogs[i].offset = analogs[i].getRotation() * -GearRatio;
       encoders[i + 4].setPosition(analogs[i].getRotation() * -GearRatio);
+<<<<<<< Updated upstream
       analogs[i].setCalculatedPosition(analogs[i].getRotation() * -GearRatio);
       analogs[i].setCalculatedAngle(analogs[i].getDegrees());
     }
@@ -340,6 +338,7 @@ public class Robot extends TimedRobot {
     return DeltaAngles;
   }
   public SwerveModuleState angleMinimize(double CurrentAngle, SwerveModuleState TargetState, int ModuleIndex) {
+<<<<<<< Updated upstream
     double deltaAngle = TargetState.angle.getDegrees() - (CurrentAngle);
   
     /* Issue is that the current angle is not consistent with the target angle.
@@ -347,6 +346,7 @@ public class Robot extends TimedRobot {
        We need to make sure they are consistent before calculating a delta.
     */
 
+<<<<<<< Updated upstream
     // if (deltaAngle > 90) {
     //   deltaAngle -= 180;
     //   TargetState.speedMetersPerSecond *= -1;
@@ -428,6 +428,7 @@ public class Robot extends TimedRobot {
 
     double[] AngleList = new double[4];
     for(int i = 0; i < 4; i++){
+<<<<<<< Updated upstream
       AngleList[i] = analogs[i].getCalculatedAngle();
     }
     double[] DeltaAngles = BoundaryCorrection(OptimizedStates, AngleList);
@@ -439,6 +440,7 @@ public class Robot extends TimedRobot {
     for(int i = 0; i < 4; i++)
     {
       SmartDashboard.putNumber("Angle Setpoint" + ModuleOrder.values()[i].toString(), OptimizedStates[i].angle.getDegrees()); 
+<<<<<<< Updated upstream
       SmartDashboard.putNumber("Angle Calculated" + ModuleOrder.values()[i].toString(), analogs[i].getCalculatedAngle()); 
       SmartDashboard.putNumber("Delta Angles" + ModuleOrder.values()[i].toString(), DeltaAngles[i]); 
       
@@ -500,6 +502,7 @@ public class Robot extends TimedRobot {
 
     for (int i = 0; i < 8; i++) {
       if (i > 3)
+<<<<<<< Updated upstream
         setPoints[i] = (DeltaAngles[i - 4] * -GearRatio / 360) + analogs[i - 4].getCalculatedPosition();
       if (Math.abs(setPoints[i]) < .1) {
         setPoints[i] = 0;
@@ -512,6 +515,7 @@ public class Robot extends TimedRobot {
         SmartDashboard.putNumber("TargetDrive" + ModuleOrder.values()[i].toString(), setPoints[i]);
       } else {
         SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i - 4].toString(), PIDControllers[i].setReference(setPoints[i], SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward).toString());
+<<<<<<< Updated upstream
         analogs[i - 4].setCalculatedPosition(setPoints[i]);
         analogs[i - 4].setCalculatedAngle(OptimizedStates[i - 4].angle.getDegrees());
         // SmartDashboard.putNumber("TargetSteer" + ModuleOrder.values()[i -
