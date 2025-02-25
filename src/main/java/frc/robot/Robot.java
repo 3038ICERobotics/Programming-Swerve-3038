@@ -163,10 +163,10 @@ public class Robot extends TimedRobot {
   Double TranslateRotation = 0.0;
 
   // Swerve Kinematics
-  Translation2d FrontLeftDriveLocation = new Translation2d(0.285, 0.285);
-  Translation2d FrontRightDriveLocation = new Translation2d(0.285, -0.285);
-  Translation2d BackLeftDriveLocation = new Translation2d(-0.285, 0.285);
-  Translation2d BackRightDriveLocation = new Translation2d(-0.285, -0.285);
+  Translation2d FrontLeftDriveLocation = new Translation2d(-0.285, 0.285);
+  Translation2d FrontRightDriveLocation = new Translation2d(0.285, 0.285);
+  Translation2d BackLeftDriveLocation = new Translation2d(-0.285, -0.285);
+  Translation2d BackRightDriveLocation = new Translation2d(0.285, -0.285);
   SwerveDriveKinematics Kinematics = new SwerveDriveKinematics(FrontLeftDriveLocation, BackLeftDriveLocation, FrontRightDriveLocation, BackRightDriveLocation);
 
   SwerveModuleState frontLeft = new SwerveModuleState();
@@ -340,21 +340,21 @@ public class Robot extends TimedRobot {
     return DeltaAngles;
   }
   public SwerveModuleState angleMinimize(double CurrentAngle, SwerveModuleState TargetState, int ModuleIndex) {
-    double deltaAngle = TargetState.angle.getDegrees() - (CurrentAngle);
+    double deltaAngle = TargetState.angle.getDegrees() - analogs[ModuleIndex].CalculatedAngle;
   
     /* Issue is that the current angle is not consistent with the target angle.
        compare smart dashboard plots of the Target angle, current angle, and new angle
        We need to make sure they are consistent before calculating a delta.
     */
 
-    // if (deltaAngle > 90) {
-    //   deltaAngle -= 180;
-    //   TargetState.speedMetersPerSecond *= -1;
-    // } else if (deltaAngle < -90) {
-    //   deltaAngle += 180;
-    //   TargetState.speedMetersPerSecond *= -1;
-    // }
-    //TargetState.angle =  TargetState.angle.getDegrees(); //new Rotation2d(((CurrentAngle + deltaAngle)%360) * Math.PI / 180);
+    if (deltaAngle > 90) {
+      deltaAngle -= 180;
+      TargetState.speedMetersPerSecond *= -1;
+    } else if (deltaAngle < -90) {
+      deltaAngle += 180;
+      TargetState.speedMetersPerSecond *= -1;
+    }
+    TargetState.angle = new Rotation2d(((analogs[ModuleIndex].CalculatedAngle + deltaAngle)%360) * Math.PI / 180);
 
     return TargetState;
    }
@@ -512,8 +512,8 @@ public class Robot extends TimedRobot {
         SmartDashboard.putNumber("TargetDrive" + ModuleOrder.values()[i].toString(), setPoints[i]);
       } else {
         SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i - 4].toString(), PIDControllers[i].setReference(setPoints[i], SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward).toString());
-        analogs[i - 4].setCalculatedPosition(setPoints[i]);
-        analogs[i - 4].setCalculatedAngle(OptimizedStates[i - 4].angle.getDegrees());
+        analogs[i - 4].CalculatedPosition=setPoints[i];
+        analogs[i - 4].CalculatedAngle+=DeltaAngles[i - 4];
         // SmartDashboard.putNumber("TargetSteer" + ModuleOrder.values()[i -
         // 4].toString(),
         // setPoints[i] * 360 / (2 * Math.PI));
