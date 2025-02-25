@@ -95,7 +95,7 @@ public class Robot extends TimedRobot {
   double DegreeBL = 0;
   double DegreeBR = 0;
 
-  double JoystickTolerance = 0.06;
+  double JoystickTolerance = 0.09;
   double GearRatio = 54.8;
 
   // Initialize Motors
@@ -120,12 +120,7 @@ public class Robot extends TimedRobot {
       BackRightSteer };
 
   // PID Controllers Array
-  private SparkClosedLoopController[] PIDControllers = { // {null,null,null,null,null,null,null,null};
-          FrontLeftDrive.getClosedLoopController(), BackLeftDrive.getClosedLoopController(),
-          FrontRightDrive.getClosedLoopController(), BackRightDrive.getClosedLoopController(),
-          FrontLeftSteer.getClosedLoopController(), BackLeftSteer.getClosedLoopController(),
-          FrontRightSteer.getClosedLoopController(), BackRightSteer.getClosedLoopController()
-      };
+  private SparkClosedLoopController[] PIDControllers = new SparkClosedLoopController[8];
 
   public enum SwerveSparks {
     FLD, BLD, FRD, BRD, FLS, BLS, FRS, BRS
@@ -136,24 +131,10 @@ public class Robot extends TimedRobot {
   };
 
   // Initialize Encoders
-  RelativeEncoder FrontLeftDriveEncoder = FrontLeftDrive.getEncoder();
-  RelativeEncoder FrontLeftSteerEncoder = FrontLeftSteer.getEncoder(); // I don't think the absolute encoder works for this - James
-  RelativeEncoder FrontRightDriveEncoder = FrontRightDrive.getEncoder();
-  RelativeEncoder FrontRightSteerEncoder = FrontRightSteer.getEncoder();
-  RelativeEncoder BackLeftDriveEncoder = BackLeftDrive.getEncoder();
-  RelativeEncoder BackLeftSteerEncoder = BackLeftSteer.getEncoder();
-  RelativeEncoder BackRightDriveEncoder = BackRightDrive.getEncoder();
-  RelativeEncoder BackRightSteerEncoder = BackRightSteer.getEncoder();
-  RelativeEncoder[] encoders = new RelativeEncoder[8];// {null,null,null,null,null,null,null,null};
+  RelativeEncoder[] encoders = new RelativeEncoder[8];
 
   //Initialize Analogs
-  SparkAnalogSensor FrontLeftAnalog = FrontLeftSteer.getAnalog(); // Range 0-2.22 0 is 1.6
-  SparkAnalogSensor FrontRightAnalog = FrontRightSteer.getAnalog();
-  SparkAnalogSensor BackLeftAnalog = BackLeftSteer.getAnalog();
-  SparkAnalogSensor BackRightAnalog = BackRightSteer.getAnalog();
   AnalogContainer[] analogs = new AnalogContainer[4];
-  // SparkAnalogSensor[] analogs = new SparkAnalogSensor[4];
-  // //{null,null,null,null};
 
   // Initialize Joystick
   Joystick JoystickL = new Joystick(0);
@@ -164,8 +145,8 @@ public class Robot extends TimedRobot {
 
   // Swerve Kinematics
   Translation2d FrontLeftDriveLocation = new Translation2d(-0.285, 0.285);
-  Translation2d FrontRightDriveLocation = new Translation2d(0.285, 0.285);
-  Translation2d BackLeftDriveLocation = new Translation2d(-0.285, -0.285);
+  Translation2d FrontRightDriveLocation = new Translation2d(-0.285, -0.285);
+  Translation2d BackLeftDriveLocation = new Translation2d(0.285, 0.285);
   Translation2d BackRightDriveLocation = new Translation2d(0.285, -0.285);
   SwerveDriveKinematics Kinematics = new SwerveDriveKinematics(FrontLeftDriveLocation, BackLeftDriveLocation, FrontRightDriveLocation, BackRightDriveLocation);
 
@@ -183,12 +164,12 @@ public class Robot extends TimedRobot {
   double BLSTuningSetpoint = 0.0;
 
   // Convert to chassis speeds
-  ChassisSpeeds chassisSpeeds = Kinematics.toChassisSpeeds(frontLeft, frontRight, backLeft, backRight);
+  // ChassisSpeeds chassisSpeeds = Kinematics.toChassisSpeeds(frontLeft, backLeft, frontRight, backRight);
 
-  // Getting individual speeds
-  double forward = chassisSpeeds.vxMetersPerSecond;
-  double sideways = chassisSpeeds.vyMetersPerSecond;
-  double angular = chassisSpeeds.omegaRadiansPerSecond;
+  // // Getting individual speeds
+  // double forward = chassisSpeeds.vxMetersPerSecond;
+  // double sideways = chassisSpeeds.vyMetersPerSecond;
+  // double angular = chassisSpeeds.omegaRadiansPerSecond;
 
   //Offset Array
   private double[] RelativeOffset = {
@@ -209,7 +190,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putData("Auto choices", m_chooser);
 
     for (int i = 0; i < 8; i++) {
-      // PIDControllers[i] = motors[i].getClosedLoopController();
+      PIDControllers[i] = motors[i].getClosedLoopController();
       encoders[i] = motors[i].getEncoder();
       // encoders[i].setPosition(0);
       if (i > 3) {
@@ -327,14 +308,14 @@ public class Robot extends TimedRobot {
     double[] DeltaAngles = new double[4];
 
     for(int i = 0; i < 4; i++){
-      DeltaAngles[i] = CommandStates[i].angle.getDegrees() - CurrentAngle[i];
+      DeltaAngles[i] = CommandStates[i].angle.getDegrees();// - CurrentAngle[i];
       SmartDashboard.putNumber("deltaAngle", DeltaAngles[i]);
 
-      if(DeltaAngles[i] > 180){
-        DeltaAngles[i] = 360 - DeltaAngles[i];
-      } else if(DeltaAngles[i] < -180){
-        DeltaAngles[i] = -DeltaAngles[i] - 360;
-      }
+      // if(DeltaAngles[i] > 180){
+      //   DeltaAngles[i] = 360 - DeltaAngles[i];
+      // } else if(DeltaAngles[i] < -180){
+      //   DeltaAngles[i] = -DeltaAngles[i] - 360;
+      // }
     }
 
     return DeltaAngles;
@@ -354,7 +335,7 @@ public class Robot extends TimedRobot {
       deltaAngle += 180;
       TargetState.speedMetersPerSecond *= -1;
     }
-    TargetState.angle = new Rotation2d(((analogs[ModuleIndex].CalculatedAngle + deltaAngle)%360) * Math.PI / 180);
+    TargetState.angle = new Rotation2d(((/*analogs[ModuleIndex].CalculatedAngle + */deltaAngle)%360) * Math.PI / 180);
 
     return TargetState;
    }
@@ -400,12 +381,7 @@ public class Robot extends TimedRobot {
   /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() {
-    SmartDashboard.putNumber("frontLeft Zero", RelativeOffset[ModuleOrder.FL.ordinal()]);// -.25
-    SmartDashboard.putNumber("frontRight Zero", RelativeOffset[ModuleOrder.FR.ordinal()]);// .9
-    SmartDashboard.putNumber("backLeft Zero", RelativeOffset[ModuleOrder.BL.ordinal()]);// -.05
-    SmartDashboard.putNumber("BackRight Zero", RelativeOffset[ModuleOrder.BR.ordinal()]);// .6
     AnalogInit();
-
   }
 
   /** This function is called periodically during operator control. */
@@ -446,8 +422,6 @@ public class Robot extends TimedRobot {
   }
 
   private void PIDTuning() {
-    SmartDashboard.putNumber("FLSE", FrontLeftSteerEncoder.getPosition());
-    SmartDashboard.putNumber("BLSE", BackLeftSteerEncoder.getPosition());
 
     // //Velocity Loop numbers
     double P = SmartDashboard.getNumber("P Gain", 0); // 0.000170
@@ -486,12 +460,11 @@ public class Robot extends TimedRobot {
   }
 
   private void applyDrive(double[] DeltaAngles) {
-    boolean toggle = SmartDashboard.getBoolean("toggle", false);
     double[] setPoints = {
-      OptimizedStates[0].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
-      OptimizedStates[1].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
-      OptimizedStates[2].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
-      OptimizedStates[3].speedMetersPerSecond * RotationsPerMeter * SecondsPerMinute,
+      OptimizedStates[0].speedMetersPerSecond,
+      OptimizedStates[1].speedMetersPerSecond,
+      OptimizedStates[2].speedMetersPerSecond,
+      OptimizedStates[3].speedMetersPerSecond,
       OptimizedStates[0].angle.getRotations(),
       OptimizedStates[1].angle.getRotations(),
       OptimizedStates[2].angle.getRotations(),
@@ -501,32 +474,19 @@ public class Robot extends TimedRobot {
     for (int i = 0; i < 8; i++) {
       if (i > 3)
         setPoints[i] = (DeltaAngles[i - 4] * -GearRatio / 360) + analogs[i - 4].getCalculatedPosition();
-      if (Math.abs(setPoints[i]) < .1) {
+      else if (Math.abs(setPoints[i]) < .1) {
         setPoints[i] = 0;
       }
     }
 
     for (int i = 0; i < 8; i++) {
       if (i < 4) { // drive
-        SmartDashboard.putString("TargetDrive Status" + ModuleOrder.values()[i].toString(), PIDControllers[i].setReference(setPoints[i], SparkMax.ControlType.kVelocity, ClosedLoopSlot.kSlot0, FeedForward).toString());
+        SmartDashboard.putString("TargetDrive Status" + ModuleOrder.values()[i].toString(), PIDControllers[i].setReference(setPoints[i] * RotationsPerMeter * SecondsPerMinute, SparkMax.ControlType.kVelocity, ClosedLoopSlot.kSlot0, FeedForward).toString());
         SmartDashboard.putNumber("TargetDrive" + ModuleOrder.values()[i].toString(), setPoints[i]);
       } else {
         SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i - 4].toString(), PIDControllers[i].setReference(setPoints[i], SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward).toString());
         analogs[i - 4].CalculatedPosition=setPoints[i];
         analogs[i - 4].CalculatedAngle+=DeltaAngles[i - 4];
-        // SmartDashboard.putNumber("TargetSteer" + ModuleOrder.values()[i -
-        // 4].toString(),
-        // setPoints[i] * 360 / (2 * Math.PI));
-        // SmartDashboard.putNumber("SteerCurAnalogOffset" + ModuleOrder.values()[i -
-        // 4].toString(),
-        // RelativeOffset[i - 4]);
-        // SmartDashboard.putNumber("SteerCurAnalogDirect" + ModuleOrder.values()[i -
-        // 4].toString(),
-        // analogs[i - 4].getDegrees());
-
-        // SmartDashboard.putNumber("SteerCurEnc" + ModuleOrder.values()[i -
-        // 4].toString(),
-        // encoders[i].getPosition() / 55);
       }
     }
   }
