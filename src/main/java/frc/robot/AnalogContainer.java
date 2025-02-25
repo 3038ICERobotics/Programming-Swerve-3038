@@ -21,6 +21,9 @@ public class AnalogContainer {
     public double getDegrees() {
 <<<<<<< Updated upstream
         return (((getRotation() * 360) + 180) % 360 ) - 180;
+=======
+        return (getRotation() * 360+180)%360-180;
+>>>>>>> Stashed changes
     }
 
     public double getRadians() {

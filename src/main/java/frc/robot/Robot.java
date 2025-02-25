@@ -163,6 +163,9 @@ public class Robot extends TimedRobot {
   Double TranslateRotation = 0.0;
 
   // Swerve Kinematics
+  Translation2d FrontLeftDriveLocation = new Translation2d(-0.285, 0.285);
+  Translation2d FrontRightDriveLocation = new Translation2d(0.285, 0.285);
+  Translation2d BackLeftDriveLocation = new Translation2d(-0.285, -0.285);
   Translation2d BackRightDriveLocation = new Translation2d(0.285, -0.285);
   SwerveDriveKinematics Kinematics = new SwerveDriveKinematics(FrontLeftDriveLocation, BackLeftDriveLocation, FrontRightDriveLocation, BackRightDriveLocation);
 
@@ -276,6 +279,10 @@ public class Robot extends TimedRobot {
 <<<<<<< Updated upstream
       analogs[i].setCalculatedPosition(analogs[i].getRotation() * -GearRatio);
       analogs[i].setCalculatedAngle(analogs[i].getDegrees());
+=======
+      analogs[i].CalculatedPosition = (analogs[i].getRotation() * -GearRatio);
+      analogs[i].CalculatedAngle = (analogs[i].getDegrees());
+>>>>>>> Stashed changes
     }
   }
 
@@ -340,6 +347,9 @@ public class Robot extends TimedRobot {
   public SwerveModuleState angleMinimize(double CurrentAngle, SwerveModuleState TargetState, int ModuleIndex) {
 <<<<<<< Updated upstream
     double deltaAngle = TargetState.angle.getDegrees() - (CurrentAngle);
+=======
+    double deltaAngle = TargetState.angle.getDegrees() - analogs[ModuleIndex].CalculatedAngle;
+>>>>>>> Stashed changes
   
     /* Issue is that the current angle is not consistent with the target angle.
        compare smart dashboard plots of the Target angle, current angle, and new angle
@@ -355,6 +365,16 @@ public class Robot extends TimedRobot {
     //   TargetState.speedMetersPerSecond *= -1;
     // }
     //TargetState.angle =  TargetState.angle.getDegrees(); //new Rotation2d(((CurrentAngle + deltaAngle)%360) * Math.PI / 180);
+=======
+    if (deltaAngle > 90) {
+      deltaAngle -= 180;
+      TargetState.speedMetersPerSecond *= -1;
+    } else if (deltaAngle < -90) {
+      deltaAngle += 180;
+      TargetState.speedMetersPerSecond *= -1;
+    }
+    TargetState.angle = new Rotation2d(((analogs[ModuleIndex].CalculatedAngle + deltaAngle)%360) * Math.PI / 180);
+>>>>>>> Stashed changes
 
     return TargetState;
    }
@@ -430,6 +450,9 @@ public class Robot extends TimedRobot {
     for(int i = 0; i < 4; i++){
 <<<<<<< Updated upstream
       AngleList[i] = analogs[i].getCalculatedAngle();
+=======
+      AngleList[i] = analogs[i].CalculatedAngle;
+>>>>>>> Stashed changes
     }
     double[] DeltaAngles = BoundaryCorrection(OptimizedStates, AngleList);
     // [MAXIMUM OBSERVED: 1.82 m/s] //
@@ -442,6 +465,9 @@ public class Robot extends TimedRobot {
       SmartDashboard.putNumber("Angle Setpoint" + ModuleOrder.values()[i].toString(), OptimizedStates[i].angle.getDegrees()); 
 <<<<<<< Updated upstream
       SmartDashboard.putNumber("Angle Calculated" + ModuleOrder.values()[i].toString(), analogs[i].getCalculatedAngle()); 
+=======
+      SmartDashboard.putNumber("Angle Calculated" + ModuleOrder.values()[i].toString(), analogs[i].CalculatedAngle); 
+>>>>>>> Stashed changes
       SmartDashboard.putNumber("Delta Angles" + ModuleOrder.values()[i].toString(), DeltaAngles[i]); 
       
     }
@@ -504,6 +530,9 @@ public class Robot extends TimedRobot {
       if (i > 3)
 <<<<<<< Updated upstream
         setPoints[i] = (DeltaAngles[i - 4] * -GearRatio / 360) + analogs[i - 4].getCalculatedPosition();
+=======
+        setPoints[i] = (DeltaAngles[i - 4] * -GearRatio / 360) + analogs[i - 4].CalculatedPosition;
+>>>>>>> Stashed changes
       if (Math.abs(setPoints[i]) < .1) {
         setPoints[i] = 0;
       }
@@ -518,6 +547,10 @@ public class Robot extends TimedRobot {
 <<<<<<< Updated upstream
         analogs[i - 4].setCalculatedPosition(setPoints[i]);
         analogs[i - 4].setCalculatedAngle(OptimizedStates[i - 4].angle.getDegrees());
+=======
+        analogs[i - 4].CalculatedPosition = setPoints[i];
+        analogs[i - 4].CalculatedAngle +=DeltaAngles[i-4];
+>>>>>>> Stashed changes
         // SmartDashboard.putNumber("TargetSteer" + ModuleOrder.values()[i -
         // 4].toString(),
         // setPoints[i] * 360 / (2 * Math.PI));
