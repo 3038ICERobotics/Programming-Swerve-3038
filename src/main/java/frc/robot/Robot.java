@@ -12,6 +12,7 @@ import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig;
@@ -59,6 +60,7 @@ public class Robot extends TimedRobot {
   public SparkBaseConfig SteeringBaseConfig = new SparkMaxConfig();
   SparkBaseConfig VelocityBaseConfig[] = new SparkBaseConfig[4];
   TalonFXConfiguration DriveConfig = new TalonFXConfiguration();
+  ClosedLoopConfig Neo550 = new ClosedLoopConfig();
 
   // Constants used to translate RPM to robot speed
   private final int RotationsPerMeter = 27;
@@ -83,15 +85,21 @@ public class Robot extends TimedRobot {
   double JoystickTolerance = 0.09;
   double GearRatio = 54.8;
 
-  // Initialize Motors
-  TalonFX FrontLeftDrive = new TalonFX(10);
+  // Initialize Motors [EDIT TALONS]
+  TalonFX FrontLeftDrive = new TalonFX(0);
   SparkMax FrontLeftSteer = new SparkMax(15, MotorType.kBrushless);
-  TalonFX FrontRightDrive = new TalonFX(3);
+  TalonFX FrontRightDrive = new TalonFX(0);
   SparkMax FrontRightSteer = new SparkMax(1, MotorType.kBrushless);
-  TalonFX BackLeftDrive = new TalonFX(22);
+  TalonFX BackLeftDrive = new TalonFX(0);
   SparkMax BackLeftSteer = new SparkMax(8, MotorType.kBrushless);
-  TalonFX BackRightDrive = new TalonFX(14);
+  TalonFX BackRightDrive = new TalonFX(0);
   SparkMax BackRightSteer = new SparkMax(2, MotorType.kBrushless);
+  //HOOK [ EDIT ]
+  SparkMax Hook = new SparkMax(0, MotorType.kBrushless);
+  //INTAKE [ EDIT ]
+  SparkFlex IntakeRoller = new SparkFlex(0, MotorType.kBrushless);
+  SparkMax AngleLeft = new SparkMax(0, MotorType.kBrushless);
+  SparkMax AngleRight = new SparkMax(0, MotorType.kBrushless);
 
   // Motor Array
   TalonFX[] DriveMotors = {
@@ -157,6 +165,9 @@ public class Robot extends TimedRobot {
   SwerveModuleState backRightOptimized = new SwerveModuleState();
   SwerveModuleState[] OptimizedStates = new SwerveModuleState[4];
 
+  AlgaePickup AlgaeGrabber;
+  RobotState State = new RobotState();
+
   double BLSTuningSetpoint = 0.0;
 
   // Convert to chassis speeds
@@ -185,6 +196,9 @@ public class Robot extends TimedRobot {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
+
+    Neo550.pidf(1, .5, .1, .00001);
+    AlgaeGrabber = new AlgaePickup(Neo550);
 
     for (int i = 0; i < 4; i++) {
       // PIDDriveControllers[i] = DriveMotors[i];
@@ -409,6 +423,21 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
+
+    if(JoystickL.getRawButtonPressed(8)){
+      State.Pickup = true;
+      State.Eject = false;
+    }
+    if(JoystickL.getRawButtonPressed(9)){
+      State.Pickup = false;
+      State.Eject = true;
+    }
+    if(State.Pickup){
+      State.Pickup = !AlgaeGrabber.Pickup();
+    }
+    if(State.Eject){
+      State.Eject = !AlgaeGrabber.Eject();
+    }
 
     // Joystick Control
     TranslateY = JoystickL.getX() * Math.abs(-JoystickL.getX()) * MaxDriveSpeed;
