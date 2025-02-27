@@ -73,12 +73,12 @@ public class Robot extends TimedRobot {
   public ClosedLoopConfig VelocityLoopConfig = new ClosedLoopConfig();
   public ClosedLoopConfig SteeringLoopConfig = new ClosedLoopConfig();
   public SparkBaseConfig SteeringBaseConfig = new SparkMaxConfig();
-   SparkBaseConfig VelocityBaseConfig[] = new SparkBaseConfig[4];
+  SparkBaseConfig VelocityBaseConfig[] = new SparkBaseConfig[4];
 
   // Constants used to translate RPM to robot speed
   private final int RotationsPerMeter = 27;
   private final int SecondsPerMinute = 60;
-  //MaxDriveSpeed and MaxTurnSpeed is in meters per second
+  // MaxDriveSpeed and MaxTurnSpeed is in meters per second
   private final double MaxDriveSpeed = 2;
   private final double MaxTurnSpeed = 3;
   double VoltageFL = 0;
@@ -108,19 +108,23 @@ public class Robot extends TimedRobot {
   SparkMax BackRightDrive = new SparkMax(14, MotorType.kBrushless);
   SparkMax BackRightSteer = new SparkMax(2, MotorType.kBrushless);
 
-  //Motor Array
-  SparkMax[] motors = {
+  // Motor Array
+  SparkMax[] DriveMotors = {
       FrontLeftDrive,
       BackLeftDrive,
       FrontRightDrive,
-      BackRightDrive,
+      BackRightDrive
+  };
+  SparkMax[] SteerMotors = {
       FrontLeftSteer,
       BackLeftSteer,
       FrontRightSteer,
-      BackRightSteer };
+      BackRightSteer
+  };
 
   // PID Controllers Array
-  private SparkClosedLoopController[] PIDControllers = new SparkClosedLoopController[8];
+  private SparkClosedLoopController[] PIDDriveControllers = new SparkClosedLoopController[4];
+  private SparkClosedLoopController[] PIDSteerControllers = new SparkClosedLoopController[4];
 
   public enum SwerveSparks {
     FLD, BLD, FRD, BRD, FLS, BLS, FRS, BRS
@@ -133,7 +137,7 @@ public class Robot extends TimedRobot {
   // Initialize Encoders
   RelativeEncoder[] encoders = new RelativeEncoder[8];
 
-  //Initialize Analogs
+  // Initialize Analogs
   AnalogContainer[] analogs = new AnalogContainer[4];
 
   // Initialize Joystick
@@ -148,7 +152,8 @@ public class Robot extends TimedRobot {
   Translation2d FrontRightDriveLocation = new Translation2d(-0.285, -0.285);
   Translation2d BackLeftDriveLocation = new Translation2d(0.285, 0.285);
   Translation2d BackRightDriveLocation = new Translation2d(0.285, -0.285);
-  SwerveDriveKinematics Kinematics = new SwerveDriveKinematics(FrontLeftDriveLocation, BackLeftDriveLocation, FrontRightDriveLocation, BackRightDriveLocation);
+  SwerveDriveKinematics Kinematics = new SwerveDriveKinematics(FrontLeftDriveLocation, BackLeftDriveLocation,
+      FrontRightDriveLocation, BackRightDriveLocation);
 
   SwerveModuleState frontLeft = new SwerveModuleState();
   SwerveModuleState frontRight = new SwerveModuleState();
@@ -164,14 +169,15 @@ public class Robot extends TimedRobot {
   double BLSTuningSetpoint = 0.0;
 
   // Convert to chassis speeds
-  // ChassisSpeeds chassisSpeeds = Kinematics.toChassisSpeeds(frontLeft, backLeft, frontRight, backRight);
+  // ChassisSpeeds chassisSpeeds = Kinematics.toChassisSpeeds(frontLeft, backLeft,
+  // frontRight, backRight);
 
   // // Getting individual speeds
   // double forward = chassisSpeeds.vxMetersPerSecond;
   // double sideways = chassisSpeeds.vyMetersPerSecond;
   // double angular = chassisSpeeds.omegaRadiansPerSecond;
 
-  //Offset Array
+  // Offset Array
   private double[] RelativeOffset = {
       0,
       0,
@@ -189,19 +195,20 @@ public class Robot extends TimedRobot {
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
 
-    for (int i = 0; i < 8; i++) {
-      PIDControllers[i] = motors[i].getClosedLoopController();
-      encoders[i] = motors[i].getEncoder();
-      // encoders[i].setPosition(0);
+    for (int i = 0; i < 4; i++) {
+      PIDDriveControllers[i] = DriveMotors[i].getClosedLoopController();
+      encoders[i] = DriveMotors[i].getEncoder();
+      PIDSteerControllers[i] = SteerMotors[i].getClosedLoopController();
+      encoders[i + 4] = SteerMotors[i].getEncoder();
       if (i > 3) {
       }
     }
-    analogs[0] = new AnalogContainer(motors[4].getAnalog(), 2.23, 1.60);
-    analogs[1] = new AnalogContainer(motors[5].getAnalog(), 2.23, 2.18);
-    analogs[2] = new AnalogContainer(motors[6].getAnalog(), 2.27, 1.78);
-    analogs[3] = new AnalogContainer(motors[7].getAnalog(), 2.20, 0.12);
+    analogs[0] = new AnalogContainer(SteerMotors[0].getAnalog(), 2.23, 1.60);
+    analogs[1] = new AnalogContainer(SteerMotors[1].getAnalog(), 2.23, 2.18);
+    analogs[2] = new AnalogContainer(SteerMotors[2].getAnalog(), 2.27, 1.78);
+    analogs[3] = new AnalogContainer(SteerMotors[3].getAnalog(), 2.20, 0.12);
 
-    //PID Values
+    // PID Values
     Prop = 1;// 1; //P = 0.000170
     Int = 0.5; // 0.5; //I = 0.000001
     Der = 0.1;// 0.1; //D = 0.000020
@@ -220,28 +227,27 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Min Output", MinOutput);
     SmartDashboard.putNumber("BLSetpoint", 0);
 
-    //Loop Configs
+    // Loop Configs
     VelocityLoopConfig.pidf(0.000170, 0.000001, 0.000020, 0.000001, ClosedLoopSlot.kSlot0);
     VelocityLoopConfig.outputRange(MinOutput, MaxOutput, ClosedLoopSlot.kSlot0);
 
     SteeringLoopConfig.pidf(Prop, Int, Der, FeedForward, ClosedLoopSlot.kSlot0);
     SteeringLoopConfig.outputRange(MinOutput, MaxOutput, ClosedLoopSlot.kSlot0);
 
-    //Applying Configs
+    // Applying Configs
     SteeringBaseConfig.apply(SteeringLoopConfig);
     SteeringBaseConfig.signals.analogPositionPeriodMs(10);
-    for (int i = 0; i < 8; i++) {
-      if (i < 4) {
-        VelocityBaseConfig[i] = new SparkMaxConfig();
-        VelocityBaseConfig[i].apply(VelocityLoopConfig);
+    for (int i = 0; i < 4; i++) {
+      VelocityBaseConfig[i] = new SparkMaxConfig();
+      VelocityBaseConfig[i].apply(VelocityLoopConfig);
       VelocityBaseConfig[i].inverted(false);
-      if(i==1){
-        VelocityBaseConfig[i].inverted(true);
-      }
-        motors[i].configure(VelocityBaseConfig[i], ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-      } else {
-        motors[i].configure(SteeringBaseConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-      }
+
+      if (i == 1) {
+        VelocityBaseConfig[i].inverted(true); }
+
+      DriveMotors[i].configure(VelocityBaseConfig[i], ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+      SteerMotors[i].configure(SteeringBaseConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
     }
 
     RelativeOffset[ModuleOrder.FL.ordinal()] = 0;
@@ -276,9 +282,11 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
     for (int i = 0; i < 4; i++) {
       SmartDashboard.putNumber("Relative Rotations" + ModuleOrder.values()[i].toString(),
-          encoders[i + 4].getPosition());
+        encoders[i + 4].getPosition());
       SmartDashboard.putNumber("Absolute Rotations" + ModuleOrder.values()[i].toString(), analogs[i].getDegrees());
-      SmartDashboard.putNumber("Relative Offset" + ModuleOrder.values()[i].toString(), analogs[i].offset * 360 / GearRatio); 
+      SmartDashboard.putNumber("Relative Offset" + ModuleOrder.values()[i].toString(),
+          analogs[i].offset * 360 / GearRatio);
+      SmartDashboard.putNumber("Position" + ModuleOrder.values()[i].toString(), analogs[i].sensor.getPosition());
     }
     // [VARIABLES: 54700 max RPM, ~27 rotations per meter, 60 seconds per minute,
     // ~3.5mps for max speed]
@@ -286,7 +294,7 @@ public class Robot extends TimedRobot {
 
   private void PerformKinematics() {
 
-    //Swerve Speed variables
+    // Swerve Speed variables
     ChassisSpeeds speeds = new ChassisSpeeds(TranslateX, TranslateY, TranslateRotation);
 
     // Convert to module states
@@ -304,29 +312,33 @@ public class Robot extends TimedRobot {
     // to normalize the speeds against the max
     Kinematics.desaturateWheelSpeeds(OptimizedStates, MaxDriveSpeed);
   }
-  public double[] BoundaryCorrection (SwerveModuleState[] CommandStates, double[] CurrentAngle){
+
+  public double[] BoundaryCorrection(SwerveModuleState[] CommandStates, double[] CurrentAngle) {
     double[] DeltaAngles = new double[4];
 
-    for(int i = 0; i < 4; i++){
+    for (int i = 0; i < 4; i++) {
       DeltaAngles[i] = CommandStates[i].angle.getDegrees();// - CurrentAngle[i];
       SmartDashboard.putNumber("deltaAngle", DeltaAngles[i]);
 
       // if(DeltaAngles[i] > 180){
-      //   DeltaAngles[i] = 360 - DeltaAngles[i];
+      // DeltaAngles[i] = 360 - DeltaAngles[i];
       // } else if(DeltaAngles[i] < -180){
-      //   DeltaAngles[i] = -DeltaAngles[i] - 360;
+      // DeltaAngles[i] = -DeltaAngles[i] - 360;
       // }
     }
 
     return DeltaAngles;
   }
+
   public SwerveModuleState angleMinimize(double CurrentAngle, SwerveModuleState TargetState, int ModuleIndex) {
     double deltaAngle = TargetState.angle.getDegrees() - analogs[ModuleIndex].CalculatedAngle;
-  
-    /* Issue is that the current angle is not consistent with the target angle.
-       compare smart dashboard plots of the Target angle, current angle, and new angle
-       We need to make sure they are consistent before calculating a delta.
-    */
+
+    /*
+     * Issue is that the current angle is not consistent with the target angle.
+     * compare smart dashboard plots of the Target angle, current angle, and new
+     * angle
+     * We need to make sure they are consistent before calculating a delta.
+     */
 
     if (deltaAngle > 90) {
       deltaAngle -= 180;
@@ -335,10 +347,11 @@ public class Robot extends TimedRobot {
       deltaAngle += 180;
       TargetState.speedMetersPerSecond *= -1;
     }
-    TargetState.angle = new Rotation2d(((/*analogs[ModuleIndex].CalculatedAngle + */deltaAngle)%360) * Math.PI / 180);
+    TargetState.angle = new Rotation2d(
+        ((/* analogs[ModuleIndex].CalculatedAngle + */deltaAngle) % 360) * Math.PI / 180);
 
     return TargetState;
-   }
+  }
 
   /**
    * This autonomous (along with the chooser code above) shows how to select
@@ -403,21 +416,22 @@ public class Robot extends TimedRobot {
     PerformKinematics();
 
     double[] AngleList = new double[4];
-    for(int i = 0; i < 4; i++){
+    for (int i = 0; i < 4; i++) {
       AngleList[i] = analogs[i].getCalculatedAngle();
     }
     double[] DeltaAngles = BoundaryCorrection(OptimizedStates, AngleList);
     // [MAXIMUM OBSERVED: 1.82 m/s] //
-    
+
     PIDTuning();
 
     applyDrive(DeltaAngles);
-    for(int i = 0; i < 4; i++)
-    {
-      SmartDashboard.putNumber("Angle Setpoint" + ModuleOrder.values()[i].toString(), OptimizedStates[i].angle.getDegrees()); 
-      SmartDashboard.putNumber("Angle Calculated" + ModuleOrder.values()[i].toString(), analogs[i].getCalculatedAngle()); 
-      SmartDashboard.putNumber("Delta Angles" + ModuleOrder.values()[i].toString(), DeltaAngles[i]); 
-      
+    for (int i = 0; i < 4; i++) {
+      SmartDashboard.putNumber("Angle Setpoint" + ModuleOrder.values()[i].toString(),
+          OptimizedStates[i].angle.getDegrees());
+      SmartDashboard.putNumber("Angle Calculated" + ModuleOrder.values()[i].toString(),
+          analogs[i].getCalculatedAngle());
+      SmartDashboard.putNumber("Delta Angles" + ModuleOrder.values()[i].toString(), DeltaAngles[i]);
+
     }
   }
 
@@ -432,7 +446,7 @@ public class Robot extends TimedRobot {
     double MaxOut = SmartDashboard.getNumber("Max Output", 1);
     double MinOut = SmartDashboard.getNumber("Min Output", -1);
 
-    //Steering Loop PID Values
+    // Steering Loop PID Values
     SteeringLoopConfig.p(P, ClosedLoopSlot.kSlot0);
     SteeringLoopConfig.i(I, ClosedLoopSlot.kSlot0);
     SteeringLoopConfig.d(D, ClosedLoopSlot.kSlot0);
@@ -450,44 +464,41 @@ public class Robot extends TimedRobot {
 
     SteeringBaseConfig.apply(SteeringLoopConfig);
 
-    for (int i = 0; i < 8; i++) {
-      if (i < 4) {
-        motors[i].configure(VelocityBaseConfig[i], ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
-      } else {
-        motors[i].configure(SteeringBaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
-      }
+    for (int i = 0; i < 4; i++) {
+        DriveMotors[i].configure(VelocityBaseConfig[i], ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        SteerMotors[i].configure(SteeringBaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
     }
   }
 
   private void applyDrive(double[] DeltaAngles) {
-    double[] setPoints = {
-      OptimizedStates[0].speedMetersPerSecond,
-      OptimizedStates[1].speedMetersPerSecond,
-      OptimizedStates[2].speedMetersPerSecond,
-      OptimizedStates[3].speedMetersPerSecond,
-      OptimizedStates[0].angle.getRotations(),
-      OptimizedStates[1].angle.getRotations(),
-      OptimizedStates[2].angle.getRotations(),
-      OptimizedStates[3].angle.getRotations()
+    double[] DriveSetPoints = {
+        OptimizedStates[0].speedMetersPerSecond,
+        OptimizedStates[1].speedMetersPerSecond,
+        OptimizedStates[2].speedMetersPerSecond,
+        OptimizedStates[3].speedMetersPerSecond,
+    }; double[] SteerSetPoints = {
+        OptimizedStates[0].angle.getRotations(),
+        OptimizedStates[1].angle.getRotations(),
+        OptimizedStates[2].angle.getRotations(),
+        OptimizedStates[3].angle.getRotations()
     };
 
-    for (int i = 0; i < 8; i++) {
-      if (i > 3)
-        setPoints[i] = (DeltaAngles[i - 4] * -GearRatio / 360) + analogs[i - 4].getCalculatedPosition();
-      else if (Math.abs(setPoints[i]) < .1) {
-        setPoints[i] = 0;
+    for (int i = 0; i < 4; i++) {
+        SteerSetPoints[i] = (DeltaAngles[i] * -GearRatio / 360) + analogs[i].getCalculatedPosition();
+      if (Math.abs(DriveSetPoints[i]) < .1) {
+        DriveSetPoints[i] = 0;
       }
     }
 
-    for (int i = 0; i < 8; i++) {
-      if (i < 4) { // drive
-        SmartDashboard.putString("TargetDrive Status" + ModuleOrder.values()[i].toString(), PIDControllers[i].setReference(setPoints[i] * RotationsPerMeter * SecondsPerMinute, SparkMax.ControlType.kVelocity, ClosedLoopSlot.kSlot0, FeedForward).toString());
-        SmartDashboard.putNumber("TargetDrive" + ModuleOrder.values()[i].toString(), setPoints[i]);
-      } else {
-        SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i - 4].toString(), PIDControllers[i].setReference(setPoints[i], SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward).toString());
-        analogs[i - 4].CalculatedPosition=setPoints[i];
-        analogs[i - 4].CalculatedAngle+=DeltaAngles[i - 4];
-      }
+    for (int i = 0; i < 4; i++) {
+        SmartDashboard.putString("TargetDrive Status" + ModuleOrder.values()[i].toString(),
+            PIDDriveControllers[i].setReference(DriveSetPoints[i] * RotationsPerMeter * SecondsPerMinute,
+                SparkMax.ControlType.kVelocity, ClosedLoopSlot.kSlot0, FeedForward).toString());
+        SmartDashboard.putNumber("TargetDrive" + ModuleOrder.values()[i].toString(), DriveSetPoints[i]);
+        SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i].toString(), PIDSteerControllers[i]
+            .setReference(SteerSetPoints[i], SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward).toString());
+        analogs[i].CalculatedPosition = SteerSetPoints[i];
+        analogs[i].CalculatedAngle += DeltaAngles[i];
     }
   }
 
