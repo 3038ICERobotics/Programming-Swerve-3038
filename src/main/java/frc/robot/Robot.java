@@ -370,9 +370,18 @@ public class Robot extends TimedRobot {
       deltaAngle += 180;
       TargetState.speedMetersPerSecond *= -1;
     }
-    TargetState.angle = new Rotation2d(
-        ((/* analogs[ModuleIndex].CalculatedAngle + */deltaAngle) % 360) * Math.PI / 180);
 
+    if (deltaAngle > 90) {
+      deltaAngle -= 180;
+      TargetState.speedMetersPerSecond *= -1;
+    } else if (deltaAngle < -90) {
+      deltaAngle += 180;
+      TargetState.speedMetersPerSecond *= -1;
+    }
+    
+    TargetState.angle = new Rotation2d(
+        ((deltaAngle) % 360) * Math.PI / 180);
+    
     return TargetState;
   }
 
