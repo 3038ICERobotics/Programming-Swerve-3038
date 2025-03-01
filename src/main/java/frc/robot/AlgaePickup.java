@@ -28,11 +28,10 @@ public class AlgaePickup {
     double PickUpPosition = 0;
     RelativeEncoder AlgaeEncoder;
     SparkBaseConfig BaseConfig;
-    DigitalInput BreakBeam = new DigitalInput(0);
+    DigitalInput LimitSwitch = new DigitalInput(0); //Could be a limit switch
 
     public AlgaePickup(ClosedLoopConfig config) {
-        AlgaeLeftConfig
-                .follow(AlgaeRight, true);
+        AlgaeLeftConfig.follow(AlgaeRight, true);
         AlgaePID = AlgaeRight.getClosedLoopController();
         BaseConfig = new SparkMaxConfig();
         BaseConfig.apply(config);
@@ -43,24 +42,24 @@ public class AlgaePickup {
 
     public boolean Pickup() {
         AlgaePID.setReference(PickUpPosition, ControlType.kPosition);
-        if (BreakBeam.get()) {
+        if (LimitSwitch.get()) {
             AlgaeFlex.set(.5);
         } else {
             AlgaeFlex.set(0);
         }
 
-        return AlgaeEncoder.getPosition() == PickUpPosition && !BreakBeam.get();
+        return AlgaeEncoder.getPosition() == PickUpPosition && !LimitSwitch.get();
     }
 
     public boolean Eject() {
 
-        if (!BreakBeam.get()) {
+        if (!LimitSwitch.get()) {
             AlgaeFlex.set(-.5);
         } else {
             AlgaePID.setReference(HomePosition, ControlType.kPosition);
             AlgaeFlex.set(0);
         }
 
-        return AlgaeEncoder.getPosition() == HomePosition && BreakBeam.get();
+        return AlgaeEncoder.getPosition() == HomePosition && LimitSwitch.get();
     }
 }

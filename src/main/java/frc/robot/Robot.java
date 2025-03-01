@@ -28,6 +28,7 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Elevator.ElevatorPositions;
 
 //   [SWERVE IS IN METERS]   
 // BASE: 0.711m x 0.711m
@@ -165,6 +166,7 @@ public class Robot extends TimedRobot {
   SwerveModuleState backRightOptimized = new SwerveModuleState();
   SwerveModuleState[] OptimizedStates = new SwerveModuleState[4];
 
+  Elevator Elevator;
   AlgaePickup AlgaeGrabber;
   RobotState State = new RobotState();
 
@@ -433,19 +435,46 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
 
-    if(JoystickL.getRawButtonPressed(8)){
-      State.Pickup = true;
-      State.Eject = false;
+    //Buttons for Algae
+    if (JoystickL.getRawButtonPressed(8)){
+      State.PickupAlgae = true;
+      State.EjectAlgae = false;
     }
-    if(JoystickL.getRawButtonPressed(9)){
-      State.Pickup = false;
-      State.Eject = true;
+    if (JoystickL.getRawButtonPressed(9)){
+      State.PickupAlgae = false;
+      State.EjectAlgae = true;
     }
-    if(State.Pickup){
-      State.Pickup = !AlgaeGrabber.Pickup();
+    if (State.PickupAlgae) {
+      State.PickupAlgae = !AlgaeGrabber.Pickup();
     }
-    if(State.Eject){
-      State.Eject = !AlgaeGrabber.Eject();
+    if (State.EjectAlgae) {
+      State.EjectAlgae = !AlgaeGrabber.Eject();
+    }
+    if (State.IntakeCoral) {
+      State.IntakeCoral = !Elevator.IntakeCoral();
+    }
+    if (State.ScoreCoral) {
+      State.ScoreCoral = !Elevator.ScoreCoral();
+    }
+    if (JoystickR.getRawButtonPressed(11)) {
+      State.IntakeCoral = true; 
+      State.ScoreCoral = false;
+    }
+    if (JoystickR.getRawButtonPressed(10)) {
+      State.IntakeCoral = false; 
+      State.ScoreCoral = true;
+    }
+    if (JoystickR.getRawButtonPressed(3)) {
+      State.CurrentHeight = ElevatorPositions.Tray;
+    }
+    if (JoystickR.getRawButtonPressed(4)) {
+      State.CurrentHeight = ElevatorPositions.First;
+    }
+    if (JoystickR.getRawButtonPressed(2)) {
+      State.CurrentHeight = ElevatorPositions.Second;
+    }
+    if (JoystickR.getRawButtonPressed(5)) {
+      State.CurrentHeight = ElevatorPositions.Third;
     }
 
     // Joystick Control
