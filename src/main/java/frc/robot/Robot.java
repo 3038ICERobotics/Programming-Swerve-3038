@@ -509,7 +509,7 @@ public class Robot extends TimedRobot {
     SteeringLoopConfig.outputRange(-1, 1);
     SteeringBaseConfig.smartCurrentLimit(15); // Default limit is 80A - this limit is too high for a NEO 550
 
-    SteeringBaseConfig.apply(SteeringLoopConfig);
+    SteeringBaseConfig.apply(SteeringLoopConfig); 
 
     double TalonkP = SmartDashboard.getNumber("TalonkP", 0);
     double TalonkI = SmartDashboard.getNumber("TalonkI", 0);
@@ -557,6 +557,11 @@ public class Robot extends TimedRobot {
             .setReference(SteerSetPoints[i], SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward).toString());
         analogs[i].CalculatedPosition = SteerSetPoints[i];
         analogs[i].CalculatedAngle += DeltaAngles[i];
+        if (analogs[i].CalculatedAngle > 180) {
+          analogs[i].CalculatedAngle -= 360;
+        } else if (analogs[i].CalculatedAngle < -180) {
+          analogs[i].CalculatedAngle += 360;
+        }
     }
   }
 
