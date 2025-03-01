@@ -19,9 +19,9 @@ import com.revrobotics.spark.SparkBase.ResetMode;
 public class AlgaePickup {
 
     // ALGAE [ EDIT ]
-    SparkMax AlgaeLeft = new SparkMax(0, MotorType.kBrushless);
-    SparkMax AlgaeRight = new SparkMax(0, MotorType.kBrushless);
-    SparkFlex AlgaeFlex = new SparkFlex(0, MotorType.kBrushless);
+    SparkMax AlgaeLeft = new SparkMax(4, MotorType.kBrushless);
+    SparkMax AlgaeRight = new SparkMax(5, MotorType.kBrushless);
+    SparkFlex AlgaeFlex = new SparkFlex(6, MotorType.kBrushless);
     SparkMaxConfig AlgaeLeftConfig = new SparkMaxConfig();
     SparkClosedLoopController AlgaePID;
     double HomePosition = 0;

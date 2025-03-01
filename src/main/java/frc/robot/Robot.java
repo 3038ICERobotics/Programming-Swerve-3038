@@ -98,9 +98,9 @@ public class Robot extends TimedRobot {
   //HOOK [ EDIT ]
   SparkMax Hook = new SparkMax(0, MotorType.kBrushless);
   //INTAKE [ EDIT ]
-  SparkFlex IntakeRoller = new SparkFlex(0, MotorType.kBrushless);
-  SparkMax AngleLeft = new SparkMax(0, MotorType.kBrushless);
-  SparkMax AngleRight = new SparkMax(0, MotorType.kBrushless);
+  SparkFlex IntakeRoller = new SparkFlex(11, MotorType.kBrushless);
+  SparkMax AngleLeft = new SparkMax(9, MotorType.kBrushless);
+  SparkMax AngleRight = new SparkMax(10, MotorType.kBrushless);
 
   // Motor Array
   TalonFX[] DriveMotors = {
@@ -166,7 +166,7 @@ public class Robot extends TimedRobot {
   SwerveModuleState backRightOptimized = new SwerveModuleState();
   SwerveModuleState[] OptimizedStates = new SwerveModuleState[4];
 
-  Elevator Elevator;
+  Elevator ElevatorObject = new Elevator();
   AlgaePickup AlgaeGrabber;
   RobotState State = new RobotState();
 
@@ -331,7 +331,7 @@ public class Robot extends TimedRobot {
     for (int i = 0; i < 4; i++) {
       OptimizedStates[i] = angleMinimize(currentAngles[i], moduleStates[i], i);
     }
-
+ 
     // Pass in all 4 optimized swerve module states as a list to
     // Kinematics.desaturateWheelSpeeds
     // to normalize the speeds against the max
@@ -451,10 +451,13 @@ public class Robot extends TimedRobot {
       State.EjectAlgae = !AlgaeGrabber.Eject();
     }
     if (State.IntakeCoral) {
-      State.IntakeCoral = !Elevator.IntakeCoral();
+      State.IntakeCoral = !ElevatorObject.IntakeCoral();
     }
     if (State.ScoreCoral) {
-      State.ScoreCoral = !Elevator.ScoreCoral();
+      State.ScoreCoral = !ElevatorObject.ScoreCoral();
+    }
+    if (State.ElevatorMoving) {
+      State.ElevatorMoving = !ElevatorObject.GoToHeight(State.CurrentHeight);
     }
     if (JoystickR.getRawButtonPressed(11)) {
       State.IntakeCoral = true; 
@@ -465,16 +468,20 @@ public class Robot extends TimedRobot {
       State.ScoreCoral = true;
     }
     if (JoystickR.getRawButtonPressed(3)) {
-      State.CurrentHeight = ElevatorPositions.Tray;
+      State.CurrentHeight = ElevatorPositions.Tray.ordinal();
+      State.ElevatorMoving = true;
     }
     if (JoystickR.getRawButtonPressed(4)) {
-      State.CurrentHeight = ElevatorPositions.First;
+      State.CurrentHeight = ElevatorPositions.First.ordinal();
+      State.ElevatorMoving = true;
     }
     if (JoystickR.getRawButtonPressed(2)) {
-      State.CurrentHeight = ElevatorPositions.Second;
+      State.CurrentHeight = ElevatorPositions.Second.ordinal();
+      State.ElevatorMoving = true;
     }
     if (JoystickR.getRawButtonPressed(5)) {
-      State.CurrentHeight = ElevatorPositions.Third;
+      State.CurrentHeight = ElevatorPositions.Third.ordinal();
+      State.ElevatorMoving = true;
     }
 
     // Joystick Control

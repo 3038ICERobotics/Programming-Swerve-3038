@@ -8,5 +8,6 @@ public class RobotState {
     public boolean EjectAlgae = false;
     public boolean IntakeCoral = false;
     public boolean ScoreCoral = false;
-    public ElevatorPositions CurrentHeight;
+    public int CurrentHeight = ElevatorPositions.Home.ordinal();
+    public boolean ElevatorMoving = false;
 }
