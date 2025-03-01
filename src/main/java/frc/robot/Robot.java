@@ -335,7 +335,14 @@ public class Robot extends TimedRobot {
       deltaAngle += 180;
       TargetState.speedMetersPerSecond *= -1;
     }
-    TargetState.angle = new Rotation2d(((/*analogs[ModuleIndex].CalculatedAngle + */deltaAngle)%360) * Math.PI / 180);
+    if (deltaAngle > 90) {
+      deltaAngle -= 180;
+      TargetState.speedMetersPerSecond *= -1;
+    } else if (deltaAngle < -90) {
+      deltaAngle += 180;
+      TargetState.speedMetersPerSecond *= -1;
+    }
+    TargetState.angle = new Rotation2d(((deltaAngle) % 360) * Math.PI / 180);
 
     return TargetState;
    }
@@ -485,8 +492,13 @@ public class Robot extends TimedRobot {
         SmartDashboard.putNumber("TargetDrive" + ModuleOrder.values()[i].toString(), setPoints[i]);
       } else {
         SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i - 4].toString(), PIDControllers[i].setReference(setPoints[i], SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward).toString());
-        analogs[i - 4].CalculatedPosition=setPoints[i];
-        analogs[i - 4].CalculatedAngle+=DeltaAngles[i - 4];
+        analogs[i - 4].CalculatedPosition = setPoints[i];
+        analogs[i - 4].CalculatedAngle += DeltaAngles[i - 4];
+        if (analogs[i - 4].CalculatedAngle > 180) {
+          analogs[i - 4].CalculatedAngle -= 360;
+        } else if (analogs[i - 4].CalculatedAngle < -180) {
+          analogs[i - 4].CalculatedAngle += 360;
+        }
       }
     }
   }
