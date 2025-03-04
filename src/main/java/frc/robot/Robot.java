@@ -87,20 +87,20 @@ public class Robot extends TimedRobot {
   double GearRatio = 54.8;
 
   // Initialize Motors [EDIT TALONS]
-  TalonFX FrontLeftDrive = new TalonFX(0);
-  SparkMax FrontLeftSteer = new SparkMax(15, MotorType.kBrushless);
-  TalonFX FrontRightDrive = new TalonFX(0);
-  SparkMax FrontRightSteer = new SparkMax(1, MotorType.kBrushless);
-  TalonFX BackLeftDrive = new TalonFX(0);
-  SparkMax BackLeftSteer = new SparkMax(8, MotorType.kBrushless);
-  TalonFX BackRightDrive = new TalonFX(0);
-  SparkMax BackRightSteer = new SparkMax(2, MotorType.kBrushless);
+  TalonFX FrontLeftDrive = new TalonFX(MotorIDs.FrontLeftDriveID);
+  SparkMax FrontLeftSteer = new SparkMax(MotorIDs.FrontLeftSteerID, MotorType.kBrushless);
+  TalonFX FrontRightDrive = new TalonFX(MotorIDs.FrontRightDriveID);
+  SparkMax FrontRightSteer = new SparkMax(MotorIDs.FrontRightSteerID, MotorType.kBrushless);
+  TalonFX BackLeftDrive = new TalonFX(MotorIDs.BackLeftDriveID);
+  SparkMax BackLeftSteer = new SparkMax(MotorIDs.BackLeftSteerID, MotorType.kBrushless);
+  TalonFX BackRightDrive = new TalonFX(MotorIDs.BackRightDrive);
+  SparkMax BackRightSteer = new SparkMax(MotorIDs.BackRightSteerID, MotorType.kBrushless);
   //HOOK [ EDIT ]
-  SparkMax Hook = new SparkMax(0, MotorType.kBrushless);
+  SparkMax Hook = new SparkMax(MotorIDs.HookID, MotorType.kBrushless);
   //INTAKE [ EDIT ]
-  SparkFlex IntakeRoller = new SparkFlex(11, MotorType.kBrushless);
-  SparkMax AngleLeft = new SparkMax(9, MotorType.kBrushless);
-  SparkMax AngleRight = new SparkMax(10, MotorType.kBrushless);
+  SparkFlex IntakeRoller = new SparkFlex(MotorIDs.IntakeRollerID, MotorType.kBrushless);
+  SparkMax AngleLeft = new SparkMax(MotorIDs.AngleLeftID, MotorType.kBrushless);
+  SparkMax AngleRight = new SparkMax(MotorIDs.AngleRightID, MotorType.kBrushless);
 
   // Motor Array
   TalonFX[] DriveMotors = {
@@ -168,6 +168,7 @@ public class Robot extends TimedRobot {
 
   Elevator ElevatorObject = new Elevator();
   AlgaePickup AlgaeGrabber;
+  CoralIntakePlatform Intake;
   RobotState State = new RobotState();
 
   double BLSTuningSetpoint = 0.0;
@@ -201,6 +202,7 @@ public class Robot extends TimedRobot {
 
     Neo550.pidf(1, .5, .1, .00001);
     AlgaeGrabber = new AlgaePickup(Neo550);
+    Intake = new CoralIntakePlatform(Neo550);
 
     for (int i = 0; i < 4; i++) {
       // PIDDriveControllers[i] = DriveMotors[i];
@@ -435,54 +437,8 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
 
-    //Buttons for Algae
-    if (JoystickL.getRawButtonPressed(8)){
-      State.PickupAlgae = true;
-      State.EjectAlgae = false;
-    }
-    if (JoystickL.getRawButtonPressed(9)){
-      State.PickupAlgae = false;
-      State.EjectAlgae = true;
-    }
-    if (State.PickupAlgae) {
-      State.PickupAlgae = !AlgaeGrabber.Pickup();
-    }
-    if (State.EjectAlgae) {
-      State.EjectAlgae = !AlgaeGrabber.Eject();
-    }
-    if (State.IntakeCoral) {
-      State.IntakeCoral = !ElevatorObject.IntakeCoral();
-    }
-    if (State.ScoreCoral) {
-      State.ScoreCoral = !ElevatorObject.ScoreCoral();
-    }
-    if (State.ElevatorMoving) {
-      State.ElevatorMoving = !ElevatorObject.GoToHeight(State.CurrentHeight);
-    }
-    if (JoystickR.getRawButtonPressed(11)) {
-      State.IntakeCoral = true; 
-      State.ScoreCoral = false;
-    }
-    if (JoystickR.getRawButtonPressed(10)) {
-      State.IntakeCoral = false; 
-      State.ScoreCoral = true;
-    }
-    if (JoystickR.getRawButtonPressed(3)) {
-      State.CurrentHeight = ElevatorPositions.Tray.ordinal();
-      State.ElevatorMoving = true;
-    }
-    if (JoystickR.getRawButtonPressed(4)) {
-      State.CurrentHeight = ElevatorPositions.First.ordinal();
-      State.ElevatorMoving = true;
-    }
-    if (JoystickR.getRawButtonPressed(2)) {
-      State.CurrentHeight = ElevatorPositions.Second.ordinal();
-      State.ElevatorMoving = true;
-    }
-    if (JoystickR.getRawButtonPressed(5)) {
-      State.CurrentHeight = ElevatorPositions.Third.ordinal();
-      State.ElevatorMoving = true;
-    }
+    CheckButtonPresses();
+    PerformActions();
 
     // Joystick Control
     TranslateY = JoystickL.getX() * Math.abs(-JoystickL.getX()) * MaxDriveSpeed;
@@ -515,6 +471,67 @@ public class Robot extends TimedRobot {
           analogs[i].getCalculatedAngle());
       SmartDashboard.putNumber("Delta Angles" + ModuleOrder.values()[i].toString(), DeltaAngles[i]);
 
+    }
+  }
+
+  private void CheckButtonPresses() {
+    //Buttons for Algae
+    if (JoystickL.getRawButtonPressed(8)){
+      State.PickupAlgae = true;
+      State.EjectAlgae = false;
+    }
+    if (JoystickL.getRawButtonPressed(9)){
+      State.PickupAlgae = false;
+      State.EjectAlgae = true;
+    }
+    if (JoystickR.getRawButtonPressed(11)) {
+      State.IntakeCoral = true; 
+      State.ScoreCoral = false;
+    }
+    if (JoystickR.getRawButtonPressed(10)) {
+      State.IntakeCoral = false; 
+      State.ScoreCoral = true;
+    }
+    if (JoystickR.getRawButtonPressed(3)) {
+      State.CurrentHeight = ElevatorPositions.Tray.ordinal();
+      State.ElevatorMoving = true;
+    }
+    if (JoystickR.getRawButtonPressed(4)) {
+      State.CurrentHeight = ElevatorPositions.First.ordinal();
+      State.ElevatorMoving = true;
+    }
+    if (JoystickR.getRawButtonPressed(2)) {
+      State.CurrentHeight = ElevatorPositions.Second.ordinal();
+      State.ElevatorMoving = true;
+    }
+    if (JoystickR.getRawButtonPressed(5)) {
+      State.CurrentHeight = ElevatorPositions.Third.ordinal();
+      State.ElevatorMoving = true;
+    }
+    if(JoystickR.getRawButtonPressed(10)){
+      State.InClimbPrep = !State.InClimbPrep;
+      State.ClimbPrepInProgress = true;
+    }
+  }
+
+  public void PerformActions(){
+    if (State.PickupAlgae) {
+      State.PickupAlgae = !AlgaeGrabber.Pickup();
+    }
+    if (State.EjectAlgae) {
+      State.EjectAlgae = !AlgaeGrabber.Eject();
+    }
+    if (State.IntakeCoral) {
+      State.IntakeCoral = !ElevatorObject.IntakeCoral() || !Intake.Transfer();
+    }
+    if (State.ScoreCoral) {
+      State.ScoreCoral = !ElevatorObject.ScoreCoral();
+    }
+    if (State.ElevatorMoving) {
+      State.ElevatorMoving = !ElevatorObject.GoToHeight(State.CurrentHeight);
+    }
+    if(State.ClimbPrepInProgress){
+      State.ClimbPrepInProgress = !Intake.GoToPosition(State.InClimbPrep);
     }
   }
 

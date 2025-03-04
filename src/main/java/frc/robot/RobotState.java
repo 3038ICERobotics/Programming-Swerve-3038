@@ -10,4 +10,6 @@ public class RobotState {
     public boolean ScoreCoral = false;
     public int CurrentHeight = ElevatorPositions.Home.ordinal();
     public boolean ElevatorMoving = false;
+    public boolean InClimbPrep = false;
+    public boolean ClimbPrepInProgress = false;
 }

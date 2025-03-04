@@ -18,10 +18,10 @@ import edu.wpi.first.wpilibj.DigitalInput;
 public class Elevator {
 
 //Initialize Motors [ EDIT ]
-SparkMax ElevatorLeft = new SparkMax(99, MotorType.kBrushless);
-SparkMax ElevatorRight = new SparkMax(98, MotorType.kBrushless);
-SparkMax AlgaeBooter = new SparkMax(7, MotorType.kBrushless);
-SparkFlex OuttakeRoller = new SparkFlex(3, MotorType.kBrushless);
+SparkMax ElevatorLeft = new SparkMax(MotorIDs.ElevatorLeftID, MotorType.kBrushless);
+SparkMax ElevatorRight = new SparkMax(MotorIDs.ElevatorRightID, MotorType.kBrushless);
+SparkMax AlgaeBooter = new SparkMax(MotorIDs.AlgaeBooterID, MotorType.kBrushless);
+SparkFlex OuttakeRoller = new SparkFlex(MotorIDs.OuttakeRollerID, MotorType.kBrushless);
 RelativeEncoder LeftEncoder;
 RelativeEncoder RightEncoder;
 DigitalInput BreakBeamClear = new DigitalInput(1);
