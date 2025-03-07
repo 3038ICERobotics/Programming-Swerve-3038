@@ -24,6 +24,10 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.networktables.IntegerArrayPublisher;
+import edu.wpi.first.networktables.IntegerArraySubscriber;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -172,6 +176,10 @@ public class Robot extends TimedRobot {
   RobotState State = new RobotState();
 
   double BLSTuningSetpoint = 0.0;
+
+  //Camera
+  NetworkTable tagsTable = NetworkTableInstance.getDefault().getTable("apriltags");
+    IntegerArraySubscriber pubTags = tagsTable.getIntegerArrayTopic("tags").;
 
   // Convert to chassis speeds
   // ChassisSpeeds chassisSpeeds = Kinematics.toChassisSpeeds(frontLeft, backLeft,
@@ -436,6 +444,8 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
+
+    //pubTags.getTopic().
 
     CheckButtonPresses();
     PerformActions();
