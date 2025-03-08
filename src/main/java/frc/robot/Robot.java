@@ -90,7 +90,8 @@ public class Robot extends TimedRobot {
   double JoystickTolerance = 0.09;
   double GearRatio = 54.8;
 
-  // Initialize Motors [EDIT TALONS]
+  // Initialize Motors
+  //DRIVE
   TalonFX FrontLeftDrive = new TalonFX(MotorIDs.FrontLeftDriveID);
   SparkMax FrontLeftSteer = new SparkMax(MotorIDs.FrontLeftSteerID, MotorType.kBrushless);
   TalonFX FrontRightDrive = new TalonFX(MotorIDs.FrontRightDriveID);
@@ -100,11 +101,11 @@ public class Robot extends TimedRobot {
   TalonFX BackRightDrive = new TalonFX(MotorIDs.BackRightDrive);
   SparkMax BackRightSteer = new SparkMax(MotorIDs.BackRightSteerID, MotorType.kBrushless);
   //HOOK [ EDIT ]
-  SparkMax Hook = new SparkMax(MotorIDs.HookID, MotorType.kBrushless);
-  //INTAKE [ EDIT ]
-  SparkFlex IntakeRoller = new SparkFlex(MotorIDs.IntakeRollerID, MotorType.kBrushless);
-  SparkMax AngleLeft = new SparkMax(MotorIDs.AngleLeftID, MotorType.kBrushless);
-  SparkMax AngleRight = new SparkMax(MotorIDs.AngleRightID, MotorType.kBrushless);
+  // SparkMax Hook = new SparkMax(MotorIDs.HookID, MotorType.kBrushless);
+  // //INTAKE [ EDIT ]
+  // SparkFlex IntakeRoller = new SparkFlex(MotorIDs.IntakeRollerID, MotorType.kBrushless);
+  // SparkMax AngleLeft = new SparkMax(MotorIDs.AngleLeftID, MotorType.kBrushless);
+  // SparkMax AngleRight = new SparkMax(MotorIDs.AngleRightID, MotorType.kBrushless);
 
   // Motor Array
   TalonFX[] DriveMotors = {
@@ -170,16 +171,16 @@ public class Robot extends TimedRobot {
   SwerveModuleState backRightOptimized = new SwerveModuleState();
   SwerveModuleState[] OptimizedStates = new SwerveModuleState[4];
 
-  Elevator ElevatorObject = new Elevator();
-  AlgaePickup AlgaeGrabber;
-  CoralIntakePlatform Intake;
+  // Elevator ElevatorObject = new Elevator();
+  // AlgaePickup AlgaeGrabber;
+  // CoralIntakePlatform Intake;
   RobotState State = new RobotState();
 
   double BLSTuningSetpoint = 0.0;
 
   //Camera
-  NetworkTable tagsTable = NetworkTableInstance.getDefault().getTable("apriltags");
-    IntegerArraySubscriber pubTags = tagsTable.getIntegerArrayTopic("tags").;
+  // NetworkTable tagsTable = NetworkTableInstance.getDefault().getTable("apriltags");
+  //   IntegerArraySubscriber pubTags = tagsTable.getIntegerArrayTopic("tags").;
 
   // Convert to chassis speeds
   // ChassisSpeeds chassisSpeeds = Kinematics.toChassisSpeeds(frontLeft, backLeft,
@@ -209,8 +210,8 @@ public class Robot extends TimedRobot {
     SmartDashboard.putData("Auto choices", m_chooser);
 
     Neo550.pidf(1, .5, .1, .00001);
-    AlgaeGrabber = new AlgaePickup(Neo550);
-    Intake = new CoralIntakePlatform(Neo550);
+    // AlgaeGrabber = new AlgaePickup(Neo550);
+    // Intake = new CoralIntakePlatform(Neo550);
 
     for (int i = 0; i < 4; i++) {
       // PIDDriveControllers[i] = DriveMotors[i];
@@ -220,10 +221,10 @@ public class Robot extends TimedRobot {
       if (i > 3) {
       }
     }
-    analogs[0] = new AnalogContainer(SteerMotors[0].getAnalog(), 2.23, 1.60);
-    analogs[1] = new AnalogContainer(SteerMotors[1].getAnalog(), 2.23, 2.18);
-    analogs[2] = new AnalogContainer(SteerMotors[2].getAnalog(), 2.27, 1.78);
-    analogs[3] = new AnalogContainer(SteerMotors[3].getAnalog(), 2.20, 0.12);
+    analogs[0] = new AnalogContainer(SteerMotors[0].getAnalog(), 2.28, 0.88);
+    analogs[1] = new AnalogContainer(SteerMotors[1].getAnalog(), 2.23, 1.88);
+    analogs[2] = new AnalogContainer(SteerMotors[2].getAnalog(), 2.25, 2.12);
+    analogs[3] = new AnalogContainer(SteerMotors[3].getAnalog(), 2.25, 1.67);
 
     // PID Values
     Prop = 1;// 1; //P = 0.000170
@@ -289,6 +290,8 @@ public class Robot extends TimedRobot {
     RelativeOffset[ModuleOrder.BL.ordinal()] = 0;
     RelativeOffset[ModuleOrder.FR.ordinal()] = 0;
     RelativeOffset[ModuleOrder.BR.ordinal()] = 0;
+//REEEEMOOVOEE
+    AnalogInit();
   }
 
   public void AnalogInit() {
@@ -325,6 +328,14 @@ public class Robot extends TimedRobot {
     }
     // [VARIABLES: 54700 max RPM, ~27 rotations per meter, 60 seconds per minute,
     // ~3.5mps for max speed]
+    SmartDashboard.getNumber("FrontLeft Analog", analogs[0].sensor.getPosition());
+    SmartDashboard.getNumber("BackLeft Analog", analogs[1].sensor.getPosition());
+    SmartDashboard.getNumber("FrontRight Analog", analogs[2].sensor.getPosition());
+    SmartDashboard.getNumber("BackRight Analog", analogs[3].sensor.getPosition());
+    SmartDashboard.getNumber("FrontLeft Degrees", analogs[0].getDegrees());
+    SmartDashboard.getNumber("BackLeft Degrees", analogs[1].getDegrees());
+    SmartDashboard.getNumber("FrontRight Degrees", analogs[2].getDegrees());
+    SmartDashboard.getNumber("BackRight Degrees", analogs[3].getDegrees());
   }
 
   private void PerformKinematics() {
@@ -438,7 +449,7 @@ public class Robot extends TimedRobot {
   /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() {
-    AnalogInit();
+    // AnalogInit();
   }
 
   /** This function is called periodically during operator control. */
@@ -525,24 +536,24 @@ public class Robot extends TimedRobot {
   }
 
   public void PerformActions(){
-    if (State.PickupAlgae) {
-      State.PickupAlgae = !AlgaeGrabber.Pickup();
-    }
-    if (State.EjectAlgae) {
-      State.EjectAlgae = !AlgaeGrabber.Eject();
-    }
-    if (State.IntakeCoral) {
-      State.IntakeCoral = !ElevatorObject.IntakeCoral() || !Intake.Transfer();
-    }
-    if (State.ScoreCoral) {
-      State.ScoreCoral = !ElevatorObject.ScoreCoral();
-    }
-    if (State.ElevatorMoving) {
-      State.ElevatorMoving = !ElevatorObject.GoToHeight(State.CurrentHeight);
-    }
-    if(State.ClimbPrepInProgress){
-      State.ClimbPrepInProgress = !Intake.GoToPosition(State.InClimbPrep);
-    }
+    // if (State.PickupAlgae) {
+    //   State.PickupAlgae = !AlgaeGrabber.Pickup();
+    // }
+    // if (State.EjectAlgae) {
+    //   State.EjectAlgae = !AlgaeGrabber.Eject();
+    // }
+    // if (State.IntakeCoral) {
+    //   State.IntakeCoral = !ElevatorObject.IntakeCoral() || !Intake.Transfer();
+    // }
+    // if (State.ScoreCoral) {
+    //   State.ScoreCoral = !ElevatorObject.ScoreCoral();
+    // }
+    // if (State.ElevatorMoving) {
+    //   State.ElevatorMoving = !ElevatorObject.GoToHeight(State.CurrentHeight);
+    // }
+    // if(State.ClimbPrepInProgress){
+    //   State.ClimbPrepInProgress = !Intake.GoToPosition(State.InClimbPrep);
+    // }
   }
 
   private void PIDTuning() {
