@@ -292,6 +292,7 @@ public class Robot extends TimedRobot {
     RelativeOffset[ModuleOrder.BR.ordinal()] = 0;
 //REEEEMOOVOEE
     AnalogInit();
+    SmartDashboard.putNumber("AngleSetPoint", 0);
   }
 
   public void AnalogInit() {
@@ -377,7 +378,9 @@ public class Robot extends TimedRobot {
   }
 
   public SwerveModuleState angleMinimize(double CurrentAngle, SwerveModuleState TargetState, int ModuleIndex) {
-    double deltaAngle = TargetState.angle.getDegrees() - analogs[ModuleIndex].CalculatedAngle;
+    double tempDegreeTarget = SmartDashboard.getNumber("AngleSetPoint", 0);
+    double deltaAngle = tempDegreeTarget - analogs[ModuleIndex].CalculatedAngle;
+    //TargetState.angle.getDegrees() - analogs[ModuleIndex].CalculatedAngle; (changed for testing)
 
     /*
      * Issue is that the current angle is not consistent with the target angle.
@@ -402,8 +405,7 @@ public class Robot extends TimedRobot {
       TargetState.speedMetersPerSecond *= -1;
     }
     
-    TargetState.angle = new Rotation2d(
-        ((deltaAngle) % 360) * Math.PI / 180);
+    TargetState.angle = new Rotation2d(((deltaAngle) % 360) * Math.PI / 180);
     
     return TargetState;
   }
@@ -605,10 +607,11 @@ public class Robot extends TimedRobot {
 
   private void applyDrive(double[] DeltaAngles) {
     double[] DriveSetPoints = {
-        OptimizedStates[0].speedMetersPerSecond,
-        OptimizedStates[1].speedMetersPerSecond,
-        OptimizedStates[2].speedMetersPerSecond,
-        OptimizedStates[3].speedMetersPerSecond,
+        OptimizedStates[0].speedMetersPerSecond * 0.0,
+        OptimizedStates[1].speedMetersPerSecond * 0.0,
+        OptimizedStates[2].speedMetersPerSecond * 0.0,
+        OptimizedStates[3].speedMetersPerSecond * 0.0,
+        //Temporarily multiplying by 0.0 for testing.
     }; double[] SteerSetPoints = {
         OptimizedStates[0].angle.getRotations(),
         OptimizedStates[1].angle.getRotations(),
