@@ -7,6 +7,7 @@ package frc.robot;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -27,6 +28,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.networktables.IntegerArrayPublisher;
 import edu.wpi.first.networktables.IntegerArraySubscriber;
 import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -59,16 +61,24 @@ public class Robot extends TimedRobot {
   // Variables used to tune PID - remove once values are defined
   public double Prop, Int, Der, IZone, FeedForward, MinOutput, MaxOutput, MaxRPM;
 
+  // Limelight
+  NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
+  NetworkTableEntry tx = table.getEntry("tx");
+  NetworkTableEntry ty = table.getEntry("ty");
+  NetworkTableEntry ta = table.getEntry("ta");
+
   // Configuration configurations
   public ClosedLoopConfig VelocityLoopConfig = new ClosedLoopConfig();
   public ClosedLoopConfig SteeringLoopConfig = new ClosedLoopConfig();
   public SparkBaseConfig SteeringBaseConfig = new SparkMaxConfig();
-  SparkBaseConfig VelocityBaseConfig[] = new SparkBaseConfig[4];
   TalonFXConfiguration DriveConfig = new TalonFXConfiguration();
   ClosedLoopConfig Neo550 = new ClosedLoopConfig();
 
+  int Count = 0;
+  double []ModuleSums = new double [4];
   // Constants used to translate RPM to robot speed
-  private final int RotationsPerMeter = 27;
+  private final int WheelRotationsPerMeter = 27;
+  private final int ShaftRotationsPerWheelRotation = 9;
   private final int SecondsPerMinute = 60;
   // MaxDriveSpeed and MaxTurnSpeed is in meters per second
   private final double MaxDriveSpeed = 2;
@@ -128,7 +138,6 @@ public class Robot extends TimedRobot {
     new VelocityVoltage(0).withSlot(0) };
 
   // PID Controllers Array
-  private SparkClosedLoopController[] PIDDriveControllers = new SparkClosedLoopController[4];
   private SparkClosedLoopController[] PIDSteerControllers = new SparkClosedLoopController[4];
 
   public enum SwerveSparks {
@@ -171,7 +180,7 @@ public class Robot extends TimedRobot {
   SwerveModuleState backRightOptimized = new SwerveModuleState();
   SwerveModuleState[] OptimizedStates = new SwerveModuleState[4];
 
-  // Elevator ElevatorObject = new Elevator();
+  Elevator ElevatorObject = new Elevator();
   // AlgaePickup AlgaeGrabber;
   // CoralIntakePlatform Intake;
   RobotState State = new RobotState();
@@ -221,7 +230,8 @@ public class Robot extends TimedRobot {
       if (i > 3) {
       }
     }
-    analogs[0] = new AnalogContainer(SteerMotors[0].getAnalog(), 2.28, 0.88);
+
+    analogs[0] = new AnalogContainer(SteerMotors[0].getAnalog(), 2.28, 1.12);
     analogs[1] = new AnalogContainer(SteerMotors[1].getAnalog(), 2.23, 1.88);
     analogs[2] = new AnalogContainer(SteerMotors[2].getAnalog(), 2.25, 2.12);
     analogs[3] = new AnalogContainer(SteerMotors[3].getAnalog(), 2.25, 1.67);
@@ -245,17 +255,19 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Min Output", MinOutput);
     SmartDashboard.putNumber("BLSetpoint", 0);
 
+    DriveConfig.Slot0.kP = 0.11;//0.000170;
+    DriveConfig.Slot0.kI = 0;//0.000001;
+    DriveConfig.Slot0.kD = 0;//0.000020;
+    DriveConfig.Slot0.kS = 0.1;//0.000001;
+    DriveConfig.Slot0.kV = 0.12;//0.000001;
+
     double TalonkP = DriveConfig.Slot0.kP;
     double TalonkI = DriveConfig.Slot0.kI;
     double TalonkD = DriveConfig.Slot0.kD;
     double TalonkS = DriveConfig.Slot0.kS;
     double TalonkV = DriveConfig.Slot0.kV;
 
-    DriveConfig.Slot0.kP = 0.000170;
-    DriveConfig.Slot0.kI = 0.000001;
-    DriveConfig.Slot0.kD = 0.000020;
-    DriveConfig.Slot0.kS = 0.000001;
-    DriveConfig.Slot0.kV = 0.000001;
+ 
 
     SmartDashboard.putNumber("Talon P Gain", TalonkP);
     SmartDashboard.putNumber("Talon I Gain", TalonkI);
@@ -273,25 +285,18 @@ public class Robot extends TimedRobot {
     // Applying Configs
     SteeringBaseConfig.apply(SteeringLoopConfig);
     SteeringBaseConfig.signals.analogPositionPeriodMs(10);
+    boolean[]inverted = {true, true, true, false};
     for (int i = 0; i < 4; i++) {
-      VelocityBaseConfig[i] = new SparkMaxConfig();
-      VelocityBaseConfig[i].apply(VelocityLoopConfig);
-      VelocityBaseConfig[i].inverted(false);
-
-      if (i == 1) {
-        VelocityBaseConfig[i].inverted(true); }
-
-      //DriveMotors[i].configure(VelocityBaseConfig[i], ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+     //DriveMotors[i].configure(VelocityBaseConfig[i], ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
       SteerMotors[i].configure(SteeringBaseConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
+      DriveConfig.MotorOutput.Inverted = inverted[i]?InvertedValue.CounterClockwise_Positive:InvertedValue.Clockwise_Positive;
+      SmartDashboard.putString("Config Status "+ModuleOrder.values()[i], DriveMotors[i].getConfigurator().apply(DriveConfig).toString());
     }
 
     RelativeOffset[ModuleOrder.FL.ordinal()] = 0;
     RelativeOffset[ModuleOrder.BL.ordinal()] = 0;
     RelativeOffset[ModuleOrder.FR.ordinal()] = 0;
     RelativeOffset[ModuleOrder.BR.ordinal()] = 0;
-//REEEEMOOVOEE
-    AnalogInit();
     SmartDashboard.putNumber("AngleSetPoint", 0);
   }
 
@@ -300,9 +305,9 @@ public class Robot extends TimedRobot {
     for (int i = 0; i < 4; i++) {
       analogs[i].offset = 0;
       RelativeOffset[i] = analogs[i].offset * 360 / analogs[i].maxVolt;
-      analogs[i].offset = analogs[i].getRotation() * -GearRatio;
-      encoders[i + 4].setPosition(analogs[i].getRotation() * -GearRatio);
-      analogs[i].setCalculatedPosition(analogs[i].getRotation() * -GearRatio);
+      analogs[i].offset = (ModuleSums[i] * -GearRatio) / 10;
+      encoders[i + 4].setPosition(analogs[i].offset);
+      analogs[i].setCalculatedPosition(analogs[i].offset);
       analogs[i].setCalculatedAngle(analogs[i].getDegrees());
     }
   }
@@ -327,16 +332,31 @@ public class Robot extends TimedRobot {
           analogs[i].offset * 360 / GearRatio);
       SmartDashboard.putNumber("Position" + ModuleOrder.values()[i].toString(), analogs[i].sensor.getPosition());
     }
+    if (Count < 10){
+      Count++;
+      for (int i = 0; i < 4; i++) {
+      ModuleSums[i] += analogs[i].getRotation();
+      }
+    }
+    else if (Count == 10){
+      AnalogInit();
+      Count++;
+    }
+    
+    ElevatorObject.BreakBeamSignal();
+    SmartDashboard.putNumber("tx", tx.getDouble(0));
+    SmartDashboard.putNumber("ty", ty.getDouble(0));
+    SmartDashboard.putNumber("ta", ta.getDouble(0));
     // [VARIABLES: 54700 max RPM, ~27 rotations per meter, 60 seconds per minute,
     // ~3.5mps for max speed]
-    SmartDashboard.getNumber("FrontLeft Analog", analogs[0].sensor.getPosition());
-    SmartDashboard.getNumber("BackLeft Analog", analogs[1].sensor.getPosition());
-    SmartDashboard.getNumber("FrontRight Analog", analogs[2].sensor.getPosition());
-    SmartDashboard.getNumber("BackRight Analog", analogs[3].sensor.getPosition());
-    SmartDashboard.getNumber("FrontLeft Degrees", analogs[0].getDegrees());
-    SmartDashboard.getNumber("BackLeft Degrees", analogs[1].getDegrees());
-    SmartDashboard.getNumber("FrontRight Degrees", analogs[2].getDegrees());
-    SmartDashboard.getNumber("BackRight Degrees", analogs[3].getDegrees());
+    // SmartDashboard.getNumber("FrontLeft Analog", analogs[0].sensor.getPosition());
+    // SmartDashboard.getNumber("BackLeft Analog", analogs[1].sensor.getPosition());
+    // SmartDashboard.getNumber("FrontRight Analog", analogs[2].sensor.getPosition());
+    // SmartDashboard.getNumber("BackRight Analog", analogs[3].sensor.getPosition());
+    SmartDashboard.putNumber("FrontLeft Degrees Calculated",  analogs[0].getCalculatedAngle());
+    SmartDashboard.putNumber("BackLeft Degrees Calculated",   analogs[1].getCalculatedAngle());
+    SmartDashboard.putNumber("FrontRight Degrees Calculated", analogs[2].getCalculatedAngle());
+    SmartDashboard.putNumber("BackRight Degrees Calculated",  analogs[3].getCalculatedAngle());
   }
 
   private void PerformKinematics() {
@@ -451,7 +471,7 @@ public class Robot extends TimedRobot {
   /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() {
-    // AnalogInit();
+
   }
 
   /** This function is called periodically during operator control. */
@@ -602,6 +622,8 @@ public class Robot extends TimedRobot {
     for (int i = 0; i < 4; i++) {
         //DriveMotors[i].configure(VelocityBaseConfig[i], ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
         SteerMotors[i].configure(SteeringBaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        SmartDashboard.putString("Config Status "+ModuleOrder.values()[i], DriveMotors[i].getConfigurator().apply(DriveConfig.Slot0).toString());
+
     }
   }
 
@@ -625,11 +647,13 @@ public class Robot extends TimedRobot {
         DriveSetPoints[i] = 0;
       }
     }
-
+    double speed = SmartDashboard.getNumber("Speed", 0);
     for (int i = 0; i < 4; i++) {
+      TalonVoltage[i].FeedForward=.05;
         SmartDashboard.putString("TargetDrive Status" + ModuleOrder.values()[i].toString(),
-        DriveMotors[i].setControl(TalonVoltage[i].withVelocity(DriveSetPoints[i] * RotationsPerMeter * SecondsPerMinute)).toString());
-        SmartDashboard.putNumber("TargetDrive" + ModuleOrder.values()[i].toString(), DriveSetPoints[i]);
+        // DriveMotors[i].setControl(TalonVoltage[i].withVelocity(DriveSetPoints[i] * RotationsPerMeter * SecondsPerMinute)).toString());
+        DriveMotors[i].setControl(TalonVoltage[i].withVelocity(speed * WheelRotationsPerMeter*ShaftRotationsPerWheelRotation).withFeedForward(0.5)).toString());
+        SmartDashboard.putNumber("Normalized Velocity " + ModuleOrder.values()[i].toString(), DriveMotors[i].getVelocity().getValueAsDouble());
         SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i].toString(), PIDSteerControllers[i]
             .setReference(SteerSetPoints[i], SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward).toString());
         analogs[i].CalculatedPosition = SteerSetPoints[i];
@@ -639,7 +663,9 @@ public class Robot extends TimedRobot {
         } else if (analogs[i].CalculatedAngle < -180) {
           analogs[i].CalculatedAngle += 360;
         }
-    }
+        //DriveMotors[i].get
+          }
+    SmartDashboard.putNumber("Speed", speed);
   }
 
   // This is update all for steering directions and update all for drive

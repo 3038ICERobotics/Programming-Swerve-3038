@@ -18,6 +18,5 @@ public class MotorIDs {
     public static int AngleLeftID = 16;
     public static int AngleRightID = 17;
     public static int AlgaeLeftID = 18;
-    public static int AlgaeRightID = 19;
     public static int AlgaeFlexID = 20;
 }

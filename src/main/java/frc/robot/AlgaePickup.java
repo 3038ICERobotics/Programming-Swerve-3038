@@ -20,7 +20,6 @@ public class AlgaePickup {
 
     // ALGAE [ EDIT ]
     SparkMax AlgaeLeft = new SparkMax(MotorIDs.AlgaeLeftID, MotorType.kBrushless);
-    SparkMax AlgaeRight = new SparkMax(MotorIDs.AlgaeRightID, MotorType.kBrushless);
     SparkFlex AlgaeFlex = new SparkFlex(MotorIDs.AlgaeFlexID, MotorType.kBrushless);
     SparkMaxConfig AlgaeLeftConfig = new SparkMaxConfig();
     SparkClosedLoopController AlgaePID;
@@ -31,13 +30,10 @@ public class AlgaePickup {
     DigitalInput LimitSwitch = new DigitalInput(0); //Could be a limit switch
 
     public AlgaePickup(ClosedLoopConfig config) {
-        AlgaeLeftConfig.follow(AlgaeRight, true);
-        AlgaePID = AlgaeRight.getClosedLoopController();
         BaseConfig = new SparkMaxConfig();
         BaseConfig.apply(config);
-        AlgaeRight.configure(BaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
         AlgaeLeft.configure(BaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
-        AlgaeRight.getEncoder();
+
     }
 
     public boolean Pickup() {
