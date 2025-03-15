@@ -30,7 +30,10 @@ import edu.wpi.first.networktables.IntegerArraySubscriber;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.ADIS16470_IMU;
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -61,6 +64,8 @@ public class Robot extends TimedRobot {
   // Variables used to tune PID - remove once values are defined
   public double Prop, Int, Der, IZone, FeedForward, MinOutput, MaxOutput, MaxRPM;
 
+  ADXRS450_Gyro gyro = new ADXRS450_Gyro(SPI.Port.kOnboardCS2);
+
   // Limelight
   NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
   NetworkTableEntry tx = table.getEntry("tx");
@@ -81,7 +86,7 @@ public class Robot extends TimedRobot {
   private final int ShaftRotationsPerWheelRotation = 9;
   private final int SecondsPerMinute = 60;
   // MaxDriveSpeed and MaxTurnSpeed is in meters per second
-  private final double MaxDriveSpeed = 2;
+  private final double MaxDriveSpeed = 3.5;
   private final double MaxTurnSpeed = 3;
   double VoltageFL = 0;
   double PositionFL = 0;
@@ -222,6 +227,7 @@ public class Robot extends TimedRobot {
     // AlgaeGrabber = new AlgaePickup(Neo550);
     // Intake = new CoralIntakePlatform(Neo550);
 
+    gyro.calibrate();
     for (int i = 0; i < 4; i++) {
       // PIDDriveControllers[i] = DriveMotors[i];
       // encoders[i] = DriveMotors[i].getEncoder();
@@ -285,11 +291,11 @@ public class Robot extends TimedRobot {
     // Applying Configs
     SteeringBaseConfig.apply(SteeringLoopConfig);
     SteeringBaseConfig.signals.analogPositionPeriodMs(10);
-    boolean[]inverted = {true, true, true, false};
+    
     for (int i = 0; i < 4; i++) {
      //DriveMotors[i].configure(VelocityBaseConfig[i], ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
       SteerMotors[i].configure(SteeringBaseConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-      DriveConfig.MotorOutput.Inverted = inverted[i]?InvertedValue.CounterClockwise_Positive:InvertedValue.Clockwise_Positive;
+      //DriveConfig.MotorOutput.Inverted = inverted[i]?InvertedValue.CounterClockwise_Positive:InvertedValue.Clockwise_Positive;
       SmartDashboard.putString("Config Status "+ModuleOrder.values()[i], DriveMotors[i].getConfigurator().apply(DriveConfig).toString());
     }
 
@@ -332,6 +338,7 @@ public class Robot extends TimedRobot {
           analogs[i].offset * 360 / GearRatio);
       SmartDashboard.putNumber("Position" + ModuleOrder.values()[i].toString(), analogs[i].sensor.getPosition());
     }
+    SmartDashboard.putNumber("Gyro", gyro.getAngle());
     if (Count < 10){
       Count++;
       for (int i = 0; i < 4; i++) {
@@ -399,7 +406,7 @@ public class Robot extends TimedRobot {
 
   public SwerveModuleState angleMinimize(double CurrentAngle, SwerveModuleState TargetState, int ModuleIndex) {
     double tempDegreeTarget = SmartDashboard.getNumber("AngleSetPoint", 0);
-    double deltaAngle = tempDegreeTarget - analogs[ModuleIndex].CalculatedAngle;
+    double deltaAngle = TargetState.angle.getDegrees() - analogs[ModuleIndex].CalculatedAngle;
     //TargetState.angle.getDegrees() - analogs[ModuleIndex].CalculatedAngle; (changed for testing)
 
     /*
@@ -487,6 +494,13 @@ public class Robot extends TimedRobot {
     TranslateY = JoystickL.getX() * Math.abs(-JoystickL.getX()) * MaxDriveSpeed;
     TranslateX = -JoystickL.getY() * Math.abs(-JoystickL.getY()) * MaxDriveSpeed;
     TranslateRotation = -JoystickR.getX() * MaxTurnSpeed;
+    
+    double angle = -gyro.getAngle()*Math.PI/180;//radians
+    double tempx = Math.cos(angle)*TranslateX-Math.sin(angle)*TranslateY;
+    double tempy = Math.sin(angle)*TranslateX+Math.cos(angle)*TranslateY;
+
+    TranslateX=tempx;
+    TranslateY=tempy;
 
     if (Math.abs(TranslateX) < JoystickTolerance)
       TranslateX = 0.0;
@@ -629,10 +643,10 @@ public class Robot extends TimedRobot {
 
   private void applyDrive(double[] DeltaAngles) {
     double[] DriveSetPoints = {
-        OptimizedStates[0].speedMetersPerSecond * 0.0,
-        OptimizedStates[1].speedMetersPerSecond * 0.0,
-        OptimizedStates[2].speedMetersPerSecond * 0.0,
-        OptimizedStates[3].speedMetersPerSecond * 0.0,
+        OptimizedStates[0].speedMetersPerSecond,
+        OptimizedStates[1].speedMetersPerSecond,
+        OptimizedStates[2].speedMetersPerSecond,
+        -OptimizedStates[3].speedMetersPerSecond,
         //Temporarily multiplying by 0.0 for testing.
     }; double[] SteerSetPoints = {
         OptimizedStates[0].angle.getRotations(),
@@ -652,7 +666,7 @@ public class Robot extends TimedRobot {
       TalonVoltage[i].FeedForward=.05;
         SmartDashboard.putString("TargetDrive Status" + ModuleOrder.values()[i].toString(),
         // DriveMotors[i].setControl(TalonVoltage[i].withVelocity(DriveSetPoints[i] * RotationsPerMeter * SecondsPerMinute)).toString());
-        DriveMotors[i].setControl(TalonVoltage[i].withVelocity(speed * WheelRotationsPerMeter*ShaftRotationsPerWheelRotation).withFeedForward(0.5)).toString());
+        DriveMotors[i].setControl(TalonVoltage[i].withVelocity(DriveSetPoints[i] * WheelRotationsPerMeter*ShaftRotationsPerWheelRotation).withFeedForward(DriveSetPoints[i])).toString());
         SmartDashboard.putNumber("Normalized Velocity " + ModuleOrder.values()[i].toString(), DriveMotors[i].getVelocity().getValueAsDouble());
         SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i].toString(), PIDSteerControllers[i]
             .setReference(SteerSetPoints[i], SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward).toString());
