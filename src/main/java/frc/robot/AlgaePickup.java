@@ -10,6 +10,7 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.ControlType;
@@ -33,6 +34,13 @@ public class AlgaePickup {
         BaseConfig = new SparkMaxConfig();
         BaseConfig.apply(config);
         AlgaeLeft.configure(BaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        AlgaeEncoder = AlgaeLeft.getEncoder();
+        AlgaeEncoder.setPosition(0);
+
+    }
+    public void DisplayPosition(){
+        SmartDashboard.putNumber("AlgaeEncoder", AlgaeEncoder.getPosition());
+        //SmartDashboard.putString("AlgaeEncoder Test", AlgaeEncoder.toString());
 
     }
 

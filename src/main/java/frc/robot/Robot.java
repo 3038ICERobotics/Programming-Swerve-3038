@@ -78,6 +78,7 @@ public class Robot extends TimedRobot {
   public SparkBaseConfig SteeringBaseConfig = new SparkMaxConfig();
   TalonFXConfiguration DriveConfig = new TalonFXConfiguration();
   ClosedLoopConfig Neo550 = new ClosedLoopConfig();
+  ClosedLoopConfig Neo = new ClosedLoopConfig();
 
   int Count = 0;
   double []ModuleSums = new double [4];
@@ -86,8 +87,8 @@ public class Robot extends TimedRobot {
   private final int ShaftRotationsPerWheelRotation = 9;
   private final int SecondsPerMinute = 60;
   // MaxDriveSpeed and MaxTurnSpeed is in meters per second
-  private final double MaxDriveSpeed = 3.5;
-  private final double MaxTurnSpeed = 3;
+  private final double MaxDriveSpeed = 8;
+  private final double MaxTurnSpeed = 10;
   double VoltageFL = 0;
   double PositionFL = 0;
   double VoltageFR = 0;
@@ -185,9 +186,10 @@ public class Robot extends TimedRobot {
   SwerveModuleState backRightOptimized = new SwerveModuleState();
   SwerveModuleState[] OptimizedStates = new SwerveModuleState[4];
 
-  Elevator ElevatorObject = new Elevator();
-  // AlgaePickup AlgaeGrabber;
-  // CoralIntakePlatform Intake;
+  Elevator ElevatorObject;
+   AlgaePickup AlgaeGrabber;
+   CoralIntakePlatform Intake;
+   Climber Climber;
   RobotState State = new RobotState();
 
   double BLSTuningSetpoint = 0.0;
@@ -224,8 +226,11 @@ public class Robot extends TimedRobot {
     SmartDashboard.putData("Auto choices", m_chooser);
 
     Neo550.pidf(1, .5, .1, .00001);
-    // AlgaeGrabber = new AlgaePickup(Neo550);
-    // Intake = new CoralIntakePlatform(Neo550);
+    Neo.pidf(.5, .0, .0, .0);
+     AlgaeGrabber = new AlgaePickup(Neo550);
+     Intake = new CoralIntakePlatform(Neo550);
+     Climber = new Climber(Neo);
+     ElevatorObject = new Elevator(Neo);
 
     gyro.calibrate();
     for (int i = 0; i < 4; i++) {
@@ -349,6 +354,13 @@ public class Robot extends TimedRobot {
       AnalogInit();
       Count++;
     }
+
+    ElevatorObject.DisplayPosition();
+    AlgaeGrabber.DisplayPosition();
+    Intake.DisplayPosition();
+    Climber.DisplayPosition();
+    
+    
     
     ElevatorObject.BreakBeamSignal();
     SmartDashboard.putNumber("tx", tx.getDouble(0));
@@ -484,6 +496,9 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
+
+    Climber.LoadClimber();
+    ElevatorObject.Test();
 
     //pubTags.getTopic().
 

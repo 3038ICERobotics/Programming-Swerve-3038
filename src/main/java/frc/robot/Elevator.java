@@ -2,6 +2,7 @@ package frc.robot;
 
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.ClosedLoopSlot;
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController;
@@ -22,26 +23,36 @@ public class Elevator {
     SparkMax ElevatorRight = new SparkMax(MotorIDs.ElevatorRightID, MotorType.kBrushless);
     SparkMax AlgaeBooter = new SparkMax(MotorIDs.AlgaeBooterID, MotorType.kBrushless);
     SparkFlex OuttakeRoller = new SparkFlex(MotorIDs.OuttakeRollerID, MotorType.kBrushless);
-    RelativeEncoder LeftEncoder;
-    RelativeEncoder RightEncoder;
     DigitalInput BreakBeamClear = new DigitalInput(6);
     DigitalInput BreakBeamCoral = new DigitalInput(2);
     public ClosedLoopConfig ElevatorLoopConfig = new ClosedLoopConfig();
     public SparkBaseConfig ElevatorBaseConfig = new SparkMaxConfig();
     SparkMaxConfig ElevatorConfig = new SparkMaxConfig();
-    SparkClosedLoopController ElevatorPID;
+    SparkClosedLoopController ElevatorPIDRight;
+    SparkClosedLoopController ElevatorPIDLeft;
+    RelativeEncoder AlgaeEncoder;
+    public RelativeEncoder RightElevatorEncoder;
+    public RelativeEncoder LeftElevatorEncoder;
 
-    public Elevator() {
-        ClosedLoopConfig config = new ClosedLoopConfig();
-        ElevatorConfig.follow(ElevatorRight, true);
-        ElevatorPID = ElevatorRight.getClosedLoopController();
+    public Elevator(ClosedLoopConfig config) {
+       // ElevatorConfig.follow(ElevatorRight, true);
+        ElevatorPIDRight = ElevatorRight.getClosedLoopController();
+        ElevatorPIDLeft = ElevatorLeft.getClosedLoopController();
         ElevatorBaseConfig = new SparkMaxConfig();
         ElevatorBaseConfig.apply(config);
         ElevatorRight.configure(ElevatorBaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
         ElevatorLeft.configure(ElevatorBaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        AlgaeEncoder = AlgaeBooter.getEncoder();
+        AlgaeEncoder.setPosition(0);
+        RightElevatorEncoder  = ElevatorRight.getEncoder();
+        LeftElevatorEncoder  = ElevatorLeft.getAlternateEncoder();
     }
 
-    public RelativeEncoder RightElevatorEncoder = ElevatorRight.getEncoder();
+    public void DisplayPosition(){
+        SmartDashboard.putNumber("ElevatorEncoderRight", RightElevatorEncoder.getPosition());
+        SmartDashboard.putNumber("ElevatorEncoderLeft", LeftElevatorEncoder.getPosition());
+        SmartDashboard.putNumber("AlgaeBooter Encoder", AlgaeEncoder.getPosition());
+    }
 
     // Positions
     public enum ElevatorPositions {
@@ -62,7 +73,7 @@ public class Elevator {
         boolean Result = false;
         HeightSetPoint = HeightRotations[TargetPosition];
         SmartDashboard.putNumber("HeightSetPoint", HeightSetPoint);
-        ElevatorPID.setReference(HeightSetPoint, SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0);
+       // ElevatorPID.setReference(HeightSetPoint, SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0);
 
         if (RightElevatorEncoder.getPosition() == HeightSetPoint) {
             Result = true;
@@ -73,6 +84,12 @@ public class Elevator {
         return Result;
         // Elevator goes to the desired height.
         // True if elevator is at the correct position; false otherwise.
+    }
+    public void Test (){
+        double ElevatorSetpoint =  SmartDashboard.getNumber("Elevator Setpoint", 0);
+        ElevatorPIDLeft.setReference(ElevatorSetpoint, ControlType.kPosition);
+        ElevatorPIDRight.setReference(ElevatorSetpoint, ControlType.kPosition);
+        SmartDashboard.putNumber("Elevator Setpoint", ElevatorSetpoint);
     }
 
     public boolean ScoreCoral() {
