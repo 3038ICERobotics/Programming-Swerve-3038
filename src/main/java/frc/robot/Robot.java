@@ -64,6 +64,7 @@ public class Robot extends TimedRobot {
   // Variables used to tune PID - remove once values are defined
   public double Prop, Int, Der, IZone, FeedForward, MinOutput, MaxOutput, MaxRPM;
 
+  //Initialize Gyro
   ADXRS450_Gyro gyro = new ADXRS450_Gyro(SPI.Port.kOnboardCS2);
 
   // Limelight
@@ -72,14 +73,16 @@ public class Robot extends TimedRobot {
   NetworkTableEntry ty = table.getEntry("ty");
   NetworkTableEntry ta = table.getEntry("ta");
 
-  // Configuration configurations
+  // Initizalize configurations
   public ClosedLoopConfig VelocityLoopConfig = new ClosedLoopConfig();
   public ClosedLoopConfig SteeringLoopConfig = new ClosedLoopConfig();
   public SparkBaseConfig SteeringBaseConfig = new SparkMaxConfig();
   TalonFXConfiguration DriveConfig = new TalonFXConfiguration();
   ClosedLoopConfig Neo550 = new ClosedLoopConfig();
   ClosedLoopConfig Neo = new ClosedLoopConfig();
+  ClosedLoopConfig NeoElevator = new ClosedLoopConfig();
 
+  //Count used for initilizing AnalogInit
   int Count = 0;
   double []ModuleSums = new double [4];
   // Constants used to translate RPM to robot speed
@@ -89,6 +92,7 @@ public class Robot extends TimedRobot {
   // MaxDriveSpeed and MaxTurnSpeed is in meters per second
   private final double MaxDriveSpeed = 8;
   private final double MaxTurnSpeed = 10;
+  //Creating Position, Degree and Voltage variables for each motor
   double VoltageFL = 0;
   double PositionFL = 0;
   double VoltageFR = 0;
@@ -103,6 +107,7 @@ public class Robot extends TimedRobot {
   double DegreeBL = 0;
   double DegreeBR = 0;
 
+  //Setting The Tolerance/Dead Space of the Joystick and Gear Ratio
   double JoystickTolerance = 0.09;
   double GearRatio = 54.8;
 
@@ -218,19 +223,21 @@ public class Robot extends TimedRobot {
   /**
    * This function is run when the robot is first started up and should be used
    * for any
-   * initialization code.
+   * initialization code
    */
   public Robot() {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
 
+    //Setting PIDF Constants for each motor type
     Neo550.pidf(1, .5, .1, .00001);
     Neo.pidf(.5, .0, .0, .0);
+    NeoElevator.pidf(0, 0, 0, 0);
      AlgaeGrabber = new AlgaePickup(Neo550);
-     Intake = new CoralIntakePlatform(Neo550);
+     Intake = new CoralIntakePlatform(Neo);
      Climber = new Climber(Neo);
-     ElevatorObject = new Elevator(Neo);
+     ElevatorObject = new Elevator(NeoElevator);
 
     gyro.calibrate();
     for (int i = 0; i < 4; i++) {
@@ -238,8 +245,8 @@ public class Robot extends TimedRobot {
       // encoders[i] = DriveMotors[i].getEncoder();
       PIDSteerControllers[i] = SteerMotors[i].getClosedLoopController();
       encoders[i + 4] = SteerMotors[i].getEncoder();
-      if (i > 3) {
-      }
+      // if (i > 3) {
+      // }
     }
 
     analogs[0] = new AnalogContainer(SteerMotors[0].getAnalog(), 2.28, 1.12);
@@ -257,14 +264,15 @@ public class Robot extends TimedRobot {
     MinOutput = -1;
     MaxRPM = 5700;
 
-    SmartDashboard.putNumber("P Gain", Prop);
-    SmartDashboard.putNumber("I Gain", Int);
-    SmartDashboard.putNumber("D Gain", Der);
-    SmartDashboard.putNumber("I Zone", IZone);
-    SmartDashboard.putNumber("Feed Forward", FeedForward);
-    SmartDashboard.putNumber("Max Output", MaxOutput);
-    SmartDashboard.putNumber("Min Output", MinOutput);
-    SmartDashboard.putNumber("BLSetpoint", 0);
+    // //Putting PIDF values into SmartDashboard
+    // SmartDashboard.putNumber("P Gain", Prop);
+    // SmartDashboard.putNumber("I Gain", Int);
+    // SmartDashboard.putNumber("D Gain", Der);
+    // SmartDashboard.putNumber("I Zone", IZone);
+    // SmartDashboard.putNumber("Feed Forward", FeedForward);
+    // SmartDashboard.putNumber("Max Output", MaxOutput);
+    // SmartDashboard.putNumber("Min Output", MinOutput);
+    // SmartDashboard.putNumber("BLSetpoint", 0);
 
     DriveConfig.Slot0.kP = 0.11;//0.000170;
     DriveConfig.Slot0.kI = 0;//0.000001;
@@ -298,7 +306,7 @@ public class Robot extends TimedRobot {
     SteeringBaseConfig.signals.analogPositionPeriodMs(10);
     
     for (int i = 0; i < 4; i++) {
-     //DriveMotors[i].configure(VelocityBaseConfig[i], ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    //  DriveMotors[i].configure(VelocityBaseConfig[i], ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
       SteerMotors[i].configure(SteeringBaseConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
       //DriveConfig.MotorOutput.Inverted = inverted[i]?InvertedValue.CounterClockwise_Positive:InvertedValue.Clockwise_Positive;
       SmartDashboard.putString("Config Status "+ModuleOrder.values()[i], DriveMotors[i].getConfigurator().apply(DriveConfig).toString());
@@ -309,6 +317,7 @@ public class Robot extends TimedRobot {
     RelativeOffset[ModuleOrder.FR.ordinal()] = 0;
     RelativeOffset[ModuleOrder.BR.ordinal()] = 0;
     SmartDashboard.putNumber("AngleSetPoint", 0);
+    DrivePID();
   }
 
   public void AnalogInit() {
@@ -335,6 +344,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
+    //Creating SmartDashboard entries of Relative and Absolute encoders for all motors
     for (int i = 0; i < 4; i++) {
       SmartDashboard.putNumber("Relative Rotations" + ModuleOrder.values()[i].toString(),
         encoders[i + 4].getPosition());
@@ -355,6 +365,9 @@ public class Robot extends TimedRobot {
       Count++;
     }
 
+    PIDTuning();
+
+    //Calling SmartDashboard encoder positions from each other class
     ElevatorObject.DisplayPosition();
     AlgaeGrabber.DisplayPosition();
     Intake.DisplayPosition();
@@ -499,6 +512,8 @@ public class Robot extends TimedRobot {
 
     Climber.LoadClimber();
     ElevatorObject.Test();
+    Intake.Test();
+    AlgaeGrabber.Test();
 
     //pubTags.getTopic().
 
@@ -517,6 +532,7 @@ public class Robot extends TimedRobot {
     TranslateX=tempx;
     TranslateY=tempy;
 
+    //Applying Joystick Tolerance
     if (Math.abs(TranslateX) < JoystickTolerance)
       TranslateX = 0.0;
     if (Math.abs(TranslateY) < JoystickTolerance)
@@ -533,7 +549,6 @@ public class Robot extends TimedRobot {
     double[] DeltaAngles = BoundaryCorrection(OptimizedStates, AngleList);
     // [MAXIMUM OBSERVED: 1.82 m/s] //
 
-    PIDTuning();
 
     applyDrive(DeltaAngles);
     for (int i = 0; i < 4; i++) {
@@ -609,6 +624,7 @@ public class Robot extends TimedRobot {
 
   private void PIDTuning() {
 
+
     // //Velocity Loop numbers
     double P = SmartDashboard.getNumber("P Gain", 0); // 0.000170
     double I = SmartDashboard.getNumber("I Gain", 0); // 0.000001
@@ -618,19 +634,34 @@ public class Robot extends TimedRobot {
     double MaxOut = SmartDashboard.getNumber("Max Output", 1);
     double MinOut = SmartDashboard.getNumber("Min Output", -1);
 
+    Neo.pidf(P, I, D, FF);
+    Intake.UpdatePID(Neo);
+
+    SmartDashboard.putNumber("P Gain", P); // 0.000170
+    SmartDashboard.putNumber("I Gain", I); // 0.000001
+    SmartDashboard.putNumber("D Gain", D); // 0.000020
+    SmartDashboard.putNumber("I Zone", IZ);
+    SmartDashboard.putNumber("Feed Forward", FF); // 0.000001
+    SmartDashboard.putNumber("Max Output", MaxOut);
+    SmartDashboard.putNumber("Min Output", MinOut);
+  }
+
+  private void DrivePID() {
     // Steering Loop PID Values
-    SteeringLoopConfig.p(P, ClosedLoopSlot.kSlot0);
-    SteeringLoopConfig.i(I, ClosedLoopSlot.kSlot0);
-    SteeringLoopConfig.d(D, ClosedLoopSlot.kSlot0);
-    SteeringLoopConfig.iZone(IZ, ClosedLoopSlot.kSlot0);
-    SteeringLoopConfig.velocityFF(FF, ClosedLoopSlot.kSlot0);
+    double MaxOut = SmartDashboard.getNumber("Max Output", 1);
+    double MinOut = SmartDashboard.getNumber("Min Output", -1);
+    SteeringLoopConfig.p(Prop, ClosedLoopSlot.kSlot0);
+    SteeringLoopConfig.i(Int, ClosedLoopSlot.kSlot0);
+    SteeringLoopConfig.d(Der, ClosedLoopSlot.kSlot0);
+    SteeringLoopConfig.iZone(IZone, ClosedLoopSlot.kSlot0);
+    SteeringLoopConfig.velocityFF(FeedForward, ClosedLoopSlot.kSlot0);
     SteeringLoopConfig.outputRange(MaxOut, MinOut, ClosedLoopSlot.kSlot0);
 
     SteeringBaseConfig.encoder
         .positionConversionFactor(1)
         .velocityConversionFactor(1);
     SteeringBaseConfig.closedLoop
-        .pidf(P, I, D, FF, ClosedLoopSlot.kSlot0);
+        .pidf(Prop, Int, Der, FeedForward, ClosedLoopSlot.kSlot0);
     SteeringLoopConfig.outputRange(-1, 1);
     SteeringBaseConfig.smartCurrentLimit(15); // Default limit is 80A - this limit is too high for a NEO 550
 

@@ -36,12 +36,18 @@ public class AlgaePickup {
         AlgaeLeft.configure(BaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
         AlgaeEncoder = AlgaeLeft.getEncoder();
         AlgaeEncoder.setPosition(0);
+        AlgaePID = AlgaeLeft.getClosedLoopController();
 
     }
     public void DisplayPosition(){
         SmartDashboard.putNumber("AlgaeEncoder", AlgaeEncoder.getPosition());
         //SmartDashboard.putString("AlgaeEncoder Test", AlgaeEncoder.toString());
 
+    }
+    public void Test (){
+        double Setpoint =  SmartDashboard.getNumber("AlgaePickup Setpoint", 0);
+        AlgaePID.setReference(Setpoint, ControlType.kPosition);
+        SmartDashboard.putNumber("AlgaePickup Setpoint", Setpoint);
     }
 
     public boolean Pickup() {
