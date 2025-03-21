@@ -231,9 +231,11 @@ public class Robot extends TimedRobot {
     SmartDashboard.putData("Auto choices", m_chooser);
 
     //Setting PIDF Constants for each motor type
-    Neo550.pidf(1, .5, .1, .00001);
-    Neo.pidf(.5, .0, .0, .0);
-    NeoElevator.pidf(0, 0, 0, 0);
+    //Neo550.pidf(1, .5, .1, .00001);
+    Neo550.pidf(0, 0, 0, 0); //.05
+    //Neo.pidf(0, 0, 0, 0);
+    //Neo.pidf(.5, .0, .0, .0);
+    NeoElevator.pidf(0.012, 0, 0, 0); 
      AlgaeGrabber = new AlgaePickup(Neo550);
      Intake = new CoralIntakePlatform(Neo);
      Climber = new Climber(Neo);
@@ -634,16 +636,16 @@ public class Robot extends TimedRobot {
     double MaxOut = SmartDashboard.getNumber("Max Output", 1);
     double MinOut = SmartDashboard.getNumber("Min Output", -1);
 
-    Neo.pidf(P, I, D, FF);
-    Intake.UpdatePID(Neo);
+    NeoElevator.pidf(P, I, D, FF);
+    ElevatorObject.UpdatePID(NeoElevator);
 
-    SmartDashboard.putNumber("P Gain", P); // 0.000170
-    SmartDashboard.putNumber("I Gain", I); // 0.000001
-    SmartDashboard.putNumber("D Gain", D); // 0.000020
-    SmartDashboard.putNumber("I Zone", IZ);
-    SmartDashboard.putNumber("Feed Forward", FF); // 0.000001
-    SmartDashboard.putNumber("Max Output", MaxOut);
-    SmartDashboard.putNumber("Min Output", MinOut);
+    // SmartDashboard.putNumber("P Gain", P); // 0.000170
+    // SmartDashboard.putNumber("I Gain", I); // 0.000001
+    // SmartDashboard.putNumber("D Gain", D); // 0.000020
+    // SmartDashboard.putNumber("I Zone", IZ);
+    // SmartDashboard.putNumber("Feed Forward", FF); // 0.000001
+    // SmartDashboard.putNumber("Max Output", MaxOut);
+    // SmartDashboard.putNumber("Min Output", MinOut);
   }
 
   private void DrivePID() {

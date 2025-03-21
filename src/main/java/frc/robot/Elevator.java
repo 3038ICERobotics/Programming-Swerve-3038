@@ -1,6 +1,7 @@
 package frc.robot;
 
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.config.BaseConfig;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -35,7 +36,7 @@ public class Elevator {
     public RelativeEncoder LeftElevatorEncoder;
 
     public Elevator(ClosedLoopConfig config) {
-       // ElevatorConfig.follow(ElevatorRight, true);
+        //ElevatorConfig.follow(ElevatorRight, false);
         ElevatorPIDRight = ElevatorRight.getClosedLoopController();
         ElevatorPIDLeft = ElevatorLeft.getClosedLoopController();
         ElevatorBaseConfig = new SparkMaxConfig();
@@ -45,13 +46,21 @@ public class Elevator {
         AlgaeEncoder = AlgaeBooter.getEncoder();
         AlgaeEncoder.setPosition(0);
         RightElevatorEncoder  = ElevatorRight.getEncoder();
-        LeftElevatorEncoder  = ElevatorLeft.getAlternateEncoder();
+        LeftElevatorEncoder  = ElevatorLeft.getEncoder();
+        RightElevatorEncoder.setPosition(0);
+        LeftElevatorEncoder.setPosition(0);
     }
 
     public void DisplayPosition(){
         SmartDashboard.putNumber("ElevatorEncoderRight", RightElevatorEncoder.getPosition());
         SmartDashboard.putNumber("ElevatorEncoderLeft", LeftElevatorEncoder.getPosition());
         SmartDashboard.putNumber("AlgaeBooter Encoder", AlgaeEncoder.getPosition());
+    }
+
+    public void UpdatePID(ClosedLoopConfig config) {
+        ElevatorBaseConfig.apply(config);
+        ElevatorRight.configure(ElevatorBaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        ElevatorLeft.configure(ElevatorBaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
     }
 
     // Positions
