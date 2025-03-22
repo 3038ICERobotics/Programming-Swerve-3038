@@ -81,6 +81,7 @@ public class Robot extends TimedRobot {
   ClosedLoopConfig Neo550 = new ClosedLoopConfig();
   ClosedLoopConfig Neo = new ClosedLoopConfig();
   ClosedLoopConfig NeoElevator = new ClosedLoopConfig();
+  ClosedLoopConfig NeoIntake = new ClosedLoopConfig();
 
   //Count used for initilizing AnalogInit
   int Count = 0;
@@ -166,8 +167,8 @@ public class Robot extends TimedRobot {
   AnalogContainer[] analogs = new AnalogContainer[4];
 
   // Initialize Joystick
-  Joystick JoystickL = new Joystick(0);
-  Joystick JoystickR = new Joystick(1);
+  Joystick JoystickR = new Joystick(0);
+  Joystick JoystickL = new Joystick(1);
   Double TranslateX = 0.0;
   Double TranslateY = 0.0;
   Double TranslateRotation = 0.0;
@@ -231,13 +232,13 @@ public class Robot extends TimedRobot {
     SmartDashboard.putData("Auto choices", m_chooser);
 
     //Setting PIDF Constants for each motor type
-    //Neo550.pidf(1, .5, .1, .00001);
-    Neo550.pidf(0, 0, 0, 0); //.05
+    Neo550.pidf(1, .5, .1, .00001);
+    //Neo550.pidf(0, 0, 0, 0); //.05
     //Neo.pidf(0, 0, 0, 0);
-    //Neo.pidf(.5, .0, .0, .0);
+    Neo.pidf(.5, .0, .0, .0);
     NeoElevator.pidf(0.012, 0, 0, 0); 
      AlgaeGrabber = new AlgaePickup(Neo550);
-     Intake = new CoralIntakePlatform(Neo);
+     Intake = new CoralIntakePlatform(NeoIntake);
      Climber = new Climber(Neo);
      ElevatorObject = new Elevator(NeoElevator);
 
@@ -355,6 +356,7 @@ public class Robot extends TimedRobot {
           analogs[i].offset * 360 / GearRatio);
       SmartDashboard.putNumber("Position" + ModuleOrder.values()[i].toString(), analogs[i].sensor.getPosition());
     }
+    
     SmartDashboard.putNumber("Gyro", gyro.getAngle());
     if (Count < 10){
       Count++;
@@ -505,17 +507,17 @@ public class Robot extends TimedRobot {
   /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() {
-
+    Intake.GoToIntake();
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
 
-    Climber.LoadClimber();
-    ElevatorObject.Test();
-    Intake.Test();
-    AlgaeGrabber.Test();
+    // Climber.LoadClimber();
+    // ElevatorObject.Test();
+    // Intake.Test();
+    // AlgaeGrabber.Test();
 
     //pubTags.getTopic().
 
@@ -523,9 +525,9 @@ public class Robot extends TimedRobot {
     PerformActions();
 
     // Joystick Control
-    TranslateY = JoystickL.getX() * Math.abs(-JoystickL.getX()) * MaxDriveSpeed;
-    TranslateX = -JoystickL.getY() * Math.abs(-JoystickL.getY()) * MaxDriveSpeed;
-    TranslateRotation = -JoystickR.getX() * MaxTurnSpeed;
+    TranslateY = JoystickR.getX() * Math.abs(-JoystickR.getX()) * MaxDriveSpeed;
+    TranslateX = -JoystickR.getY() * Math.abs(-JoystickR.getY()) * MaxDriveSpeed;
+    TranslateRotation = -JoystickL.getX() * MaxTurnSpeed;
     
     double angle = -gyro.getAngle()*Math.PI/180;//radians
     double tempx = Math.cos(angle)*TranslateX-Math.sin(angle)*TranslateY;
@@ -594,12 +596,27 @@ public class Robot extends TimedRobot {
       State.ElevatorMoving = true;
     }
     if (JoystickR.getRawButtonPressed(5)) {
-      State.CurrentHeight = ElevatorPositions.Third.ordinal();
+      State.CurrentHeight = ElevatorPositions.Load.ordinal();
+      State.IntakeCoral = true;
+      State.ElevatorMoving = true;
+    }
+    if (JoystickR.getRawButtonPressed(1)) {
+      State.CurrentHeight = ElevatorPositions.Home.ordinal();
       State.ElevatorMoving = true;
     }
     if(JoystickR.getRawButtonPressed(10)){
       State.InClimbPrep = !State.InClimbPrep;
       State.ClimbPrepInProgress = true;
+    }
+    if(JoystickL.getRawButtonPressed(8)){
+      gyro.calibrate();
+    }
+    if(JoystickL.getRawButton(1)){
+      State.ScoreCoral = true;
+    }
+    if(JoystickL.getRawButtonPressed(10))
+    {
+      State.ClearCoral = true;
     }
   }
 
@@ -610,15 +627,18 @@ public class Robot extends TimedRobot {
     // if (State.EjectAlgae) {
     //   State.EjectAlgae = !AlgaeGrabber.Eject();
     // }
-    // if (State.IntakeCoral) {
-    //   State.IntakeCoral = !ElevatorObject.IntakeCoral() || !Intake.Transfer();
-    // }
-    // if (State.ScoreCoral) {
-    //   State.ScoreCoral = !ElevatorObject.ScoreCoral();
-    // }
-    // if (State.ElevatorMoving) {
-    //   State.ElevatorMoving = !ElevatorObject.GoToHeight(State.CurrentHeight);
-    // }
+    if(State.ClearCoral){
+      State.ClearCoral = !ElevatorObject.IntakeCoral();
+    }
+    if (State.IntakeCoral) {
+      State.IntakeCoral = !Intake.GoToIntake();
+    }
+    if (State.ScoreCoral) {
+      State.ScoreCoral = ElevatorObject.ScoreCoral(JoystickL.getRawButton(1));
+    }
+    if (State.ElevatorMoving) {
+      State.ElevatorMoving = !ElevatorObject.GoToHeight(State.CurrentHeight);
+    }
     // if(State.ClimbPrepInProgress){
     //   State.ClimbPrepInProgress = !Intake.GoToPosition(State.InClimbPrep);
     // }
@@ -636,8 +656,8 @@ public class Robot extends TimedRobot {
     double MaxOut = SmartDashboard.getNumber("Max Output", 1);
     double MinOut = SmartDashboard.getNumber("Min Output", -1);
 
-    NeoElevator.pidf(P, I, D, FF);
-    ElevatorObject.UpdatePID(NeoElevator);
+    NeoIntake.pidf(P, I, D, FF);
+    Intake.UpdatePID(NeoIntake);
 
     // SmartDashboard.putNumber("P Gain", P); // 0.000170
     // SmartDashboard.putNumber("I Gain", I); // 0.000001

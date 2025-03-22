@@ -12,4 +12,5 @@ public class RobotState {
     public boolean ElevatorMoving = false;
     public boolean InClimbPrep = false;
     public boolean ClimbPrepInProgress = false;
+    public boolean ClearCoral = false;
 }

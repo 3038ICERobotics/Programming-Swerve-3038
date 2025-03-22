@@ -65,24 +65,26 @@ public class Elevator {
 
     // Positions
     public enum ElevatorPositions {
-        Home, Player, Tray, First, Second, Third
+        Home, Load, Tray, First, Second
     }
 
     float HomePosition = 0;
-    float PlayerPosition = 1;
-    float TrayPosition = 2;
-    float FirstPosition = 3;
-    float SecondPosition = 4;
-    float ThirdPosition = 5;
-    float[] HeightRotations = { HomePosition, PlayerPosition, TrayPosition, FirstPosition, SecondPosition,
-            ThirdPosition };
+    float LoadPosition = -12;
+    float TrayPosition = -10;
+    float FirstPosition = -25;
+    float SecondPosition = -37;
+    //float ThirdPosition = 5;
+    float[] HeightRotations = { HomePosition, LoadPosition, TrayPosition, FirstPosition, SecondPosition,
+             };
 
     public boolean GoToHeight(int TargetPosition) {
         double HeightSetPoint;
         boolean Result = false;
         HeightSetPoint = HeightRotations[TargetPosition];
         SmartDashboard.putNumber("HeightSetPoint", HeightSetPoint);
-       // ElevatorPID.setReference(HeightSetPoint, SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0);
+        ElevatorPIDLeft.setReference(HeightSetPoint, SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0);
+        ElevatorPIDRight.setReference(HeightSetPoint, SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0);
+
 
         if (RightElevatorEncoder.getPosition() == HeightSetPoint) {
             Result = true;
@@ -101,22 +103,21 @@ public class Elevator {
         SmartDashboard.putNumber("Elevator Setpoint", ElevatorSetpoint);
     }
 
-    public boolean ScoreCoral() {
-        boolean Coral = BreakBeamCoral.get();
+    public boolean ScoreCoral(boolean Coral) { 
         if (Coral) {
-            OuttakeRoller.set(0);
+            OuttakeRoller.set(-0.5);
         } else {
-            OuttakeRoller.set(0.5);
+            OuttakeRoller.set(0);
         }
         return Coral;
     }
 
     public boolean IntakeCoral() {
-        boolean HasCoral = BreakBeamClear.get() && !BreakBeamCoral.get();
+        boolean HasCoral = BreakBeamClear.get();
         if (HasCoral) {
             OuttakeRoller.set(0);
         } else {
-            OuttakeRoller.set(0.5);
+            OuttakeRoller.set(-0.2);
         }
         return HasCoral;
     }

@@ -23,8 +23,8 @@ public class CoralIntakePlatform {
     // MotorType.kBrushless);
     SparkMaxConfig LeftConfig = new SparkMaxConfig();
     SparkClosedLoopController PID;
-    double FeedPosition = 0;
-    double PrepPosition = 0;
+    double FeedPosition = -5.5;
+    double PrepPosition = -12;
     boolean InClimb = false;
     RelativeEncoder Encoder;
     RelativeEncoder Encoder2;
@@ -63,14 +63,17 @@ public class CoralIntakePlatform {
         SmartDashboard.putNumber("CoralIntake Setpoint", Setpoint);
     }
 
-    public boolean GoToPosition(boolean GoToClimb) {
-        double TargetPosition = FeedPosition;
-        if (GoToClimb) {
-            TargetPosition = PrepPosition;
-        }
-        PID.setReference(TargetPosition, ControlType.kPosition);
+    public boolean GoToIntake() {
+        PID.setReference(FeedPosition, ControlType.kPosition);
 
-        return Encoder.getPosition() == TargetPosition;
+        return true;
+       // return Encoder.getPosition() == TargetPosition;
+    }
+    public boolean GoToClimb() {
+        PID.setReference(PrepPosition, ControlType.kPosition);
+
+        return true;
+       // return Encoder.getPosition() == TargetPosition;
     }
 
     // public boolean Transfer(){
