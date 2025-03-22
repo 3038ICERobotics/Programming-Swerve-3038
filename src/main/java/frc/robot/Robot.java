@@ -583,7 +583,7 @@ public class Robot extends TimedRobot {
       State.IntakeCoral = false; 
       State.ScoreCoral = true;
     }
-    if (JoystickR.getRawButtonPressed(3)) {
+    if (JoystickR.getRawButtonPressed(2)) {
       State.CurrentHeight = ElevatorPositions.Tray.ordinal();
       State.ElevatorMoving = true;
     }
@@ -591,7 +591,7 @@ public class Robot extends TimedRobot {
       State.CurrentHeight = ElevatorPositions.First.ordinal();
       State.ElevatorMoving = true;
     }
-    if (JoystickR.getRawButtonPressed(2)) {
+    if (JoystickR.getRawButtonPressed(3)) {
       State.CurrentHeight = ElevatorPositions.Second.ordinal();
       State.ElevatorMoving = true;
     }
@@ -600,7 +600,7 @@ public class Robot extends TimedRobot {
       State.IntakeCoral = true;
       State.ElevatorMoving = true;
     }
-    if (JoystickR.getRawButtonPressed(1)) {
+    if (JoystickR.getRawButtonPressed(9)) {
       State.CurrentHeight = ElevatorPositions.Home.ordinal();
       State.ElevatorMoving = true;
     }
@@ -611,12 +611,22 @@ public class Robot extends TimedRobot {
     if(JoystickL.getRawButtonPressed(8)){
       gyro.calibrate();
     }
-    if(JoystickL.getRawButton(1)){
+    if(JoystickR.getRawButton(1)){
       State.ScoreCoral = true;
     }
     if(JoystickL.getRawButtonPressed(10))
     {
       State.ClearCoral = true;
+    }
+    if(JoystickL.getRawButtonPressed(3))
+    {
+      // TODO - use the state machine
+      Climber.ExtendClimber();
+    }
+    if(JoystickL.getRawButtonPressed(2))
+    {
+      // TODO - use the state machine
+      Climber.RetractClimber();
     }
   }
 
@@ -634,7 +644,7 @@ public class Robot extends TimedRobot {
       State.IntakeCoral = !Intake.GoToIntake();
     }
     if (State.ScoreCoral) {
-      State.ScoreCoral = ElevatorObject.ScoreCoral(JoystickL.getRawButton(1));
+      State.ScoreCoral = ElevatorObject.ScoreCoral(JoystickR.getRawButton(1));
     }
     if (State.ElevatorMoving) {
       State.ElevatorMoving = !ElevatorObject.GoToHeight(State.CurrentHeight);
