@@ -658,14 +658,19 @@ public class Robot extends TimedRobot {
 
 
     // //Velocity Loop numbers
-    double P = SmartDashboard.getNumber("P Gain", 0); // 0.000170
-    double I = SmartDashboard.getNumber("I Gain", 0); // 0.000001
-    double D = SmartDashboard.getNumber("D Gain", 0); // 0.000020
-    double IZ = SmartDashboard.getNumber("I Zone", 0);
-    double FF = SmartDashboard.getNumber("Feed Forward", 0); // 0.000001
-    double MaxOut = SmartDashboard.getNumber("Max Output", 1);
-    double MinOut = SmartDashboard.getNumber("Min Output", -1);
+    //double P = SmartDashboard.getNumber("P Gain", 0); // 0.000170
+    //double I = SmartDashboard.getNumber("I Gain", 0); // 0.000001
+    //double D = SmartDashboard.getNumber("D Gain", 0); // 0.000020
+    //double IZ = SmartDashboard.getNumber("I Zone", 0);
+    //double FF = SmartDashboard.getNumber("Feed Forward", 0); // 0.000001
+    //double MaxOut = SmartDashboard.getNumber("Max Output", 1);
+    //double MinOut = SmartDashboard.getNumber("Min Output", -1);
 
+    // Values for Coral Intake PID
+    double P = 0.02;
+    double I = 0.0f;
+    double D = 0.0f;
+    double FF = 0.0f;
     NeoIntake.pidf(P, I, D, FF);
     Intake.UpdatePID(NeoIntake);
 

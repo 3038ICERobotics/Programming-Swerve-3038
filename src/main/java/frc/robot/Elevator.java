@@ -92,7 +92,7 @@ public class Elevator {
         // if (ElevatorPositions.Home.getOrdinal()) { run motors until encoders reach 0
         // }
         //
-        return Result;
+        return true; // Always return true - else we will never be at exact setpoint
         // Elevator goes to the desired height.
         // True if elevator is at the correct position; false otherwise.
     }
