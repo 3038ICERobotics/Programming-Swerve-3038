@@ -28,48 +28,54 @@ public class AlgaePickup {
     double PickUpPosition = 0;
     RelativeEncoder AlgaeEncoder;
     SparkBaseConfig BaseConfig;
-    DigitalInput LimitSwitch = new DigitalInput(0); //Could be a limit switch
+    DigitalInput LimitSwitch = new DigitalInput(3); //Could be a limit switch
 
     public AlgaePickup(ClosedLoopConfig config) {
+        SmartDashboard.putNumber("AlgaePickup Setpoint", 0);
         BaseConfig = new SparkMaxConfig();
         BaseConfig.apply(config);
         AlgaeLeft.configure(BaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
         AlgaeEncoder = AlgaeLeft.getEncoder();
         AlgaeEncoder.setPosition(0);
         AlgaePID = AlgaeLeft.getClosedLoopController();
-
     }
     public void DisplayPosition(){
         SmartDashboard.putNumber("AlgaeEncoder", AlgaeEncoder.getPosition());
-        //SmartDashboard.putString("AlgaeEncoder Test", AlgaeEncoder.toString());
+        SmartDashboard.putBoolean("Algae Breakbeam", LimitSwitch.get());
 
     }
     public void Test (){
         double Setpoint =  SmartDashboard.getNumber("AlgaePickup Setpoint", 0);
         AlgaePID.setReference(Setpoint, ControlType.kPosition);
-        SmartDashboard.putNumber("AlgaePickup Setpoint", Setpoint);
+        
     }
 
+    public void UpdatePID(ClosedLoopConfig config){
+        BaseConfig.apply(config);
+        AlgaeLeft.configure(BaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+    }
+
+    //return true to continue, false to stop
     public boolean Pickup() {
         AlgaePID.setReference(PickUpPosition, ControlType.kPosition);
-        if (LimitSwitch.get()) {
-            AlgaeFlex.set(.5);
+        boolean limit = LimitSwitch.get();
+        if (limit) {
+            AlgaeFlex.set(-.2);
         } else {
             AlgaeFlex.set(0);
         }
-
-        return AlgaeEncoder.getPosition() == PickUpPosition && !LimitSwitch.get();
+        return limit;
     }
 
+    //return true to continue, false to stop
     public boolean Eject() {
-
-        if (!LimitSwitch.get()) {
-            AlgaeFlex.set(-.5);
+        boolean limit = !LimitSwitch.get();
+        if (limit) {
+            AlgaeFlex.set(.5);
         } else {
-            AlgaePID.setReference(HomePosition, ControlType.kPosition);
+            //AlgaePID.setReference(HomePosition, ControlType.kPosition);
             AlgaeFlex.set(0);
         }
-
-        return AlgaeEncoder.getPosition() == HomePosition && LimitSwitch.get();
+        return limit;
     }
 }

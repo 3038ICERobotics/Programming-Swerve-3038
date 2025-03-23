@@ -21,14 +21,16 @@ public class Climber {
     SparkClosedLoopController PID;
         SparkBaseConfig BaseConfig;
         double TargetPosition = 0;
-        double ExtendSetpoint = -23;
-        double RetractSetpoint = 0;
+        double ExtendSetpoint = -70;
+        double RetractSetpoint = 12;
 
 public Climber(ClosedLoopConfig config){
     PID = Climber.getClosedLoopController();
         BaseConfig = new SparkMaxConfig();
         BaseConfig.apply(config);
+        ClimberEncoder.setPosition(0);
         Climber.configure(BaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        SmartDashboard.putNumber("ClimberSetpoint", 0);
 }
 
         public void DisplayPosition(){
@@ -42,5 +44,10 @@ public Climber(ClosedLoopConfig config){
 
         public void RetractClimber(){
                 PID.setReference(RetractSetpoint, ControlType.kPosition);
+        }
+
+        public void Test(){
+                double val = SmartDashboard.getNumber("ClimberSetpoint", 0);
+                PID.setReference(val, ControlType.kPosition);
         }
 }

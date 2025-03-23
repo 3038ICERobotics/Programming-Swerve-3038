@@ -11,12 +11,12 @@ public class MotorIDs {
     public static int BackRightSteerID = 9;
     public static int ElevatorLeftID = 10;
     public static int ElevatorRightID = 11;
-    public static int AlgaeBooterID = 12;
+    public static int AlgaeBooterID = 12;  
     public static int OuttakeRollerID = 13;
     public static int HookID = 14;
   //  public static int IntakeRollerID = 15;
-    public static int AngleLeftID = 16;
-    public static int AngleRightID = 17;
-    public static int AlgaeLeftID = 18;
-    public static int AlgaeFlexID = 20;
+    public static int AngleLeftID = 16;   // Coral Intake Platform
+    public static int AngleRightID = 17;  // Coral Intake Platform
+    public static int AlgaeLeftID = 18;   // Algae Arm Angle
+    public static int AlgaeFlexID = 20;   // Algea Arm Wheel Drive
 }

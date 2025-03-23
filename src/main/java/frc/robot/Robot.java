@@ -64,7 +64,7 @@ public class Robot extends TimedRobot {
   // Variables used to tune PID - remove once values are defined
   public double Prop, Int, Der, IZone, FeedForward, MinOutput, MaxOutput, MaxRPM;
 
-  //Initialize Gyro
+  // Initialize Gyro
   ADXRS450_Gyro gyro = new ADXRS450_Gyro(SPI.Port.kOnboardCS2);
 
   // Limelight
@@ -79,13 +79,14 @@ public class Robot extends TimedRobot {
   public SparkBaseConfig SteeringBaseConfig = new SparkMaxConfig();
   TalonFXConfiguration DriveConfig = new TalonFXConfiguration();
   ClosedLoopConfig Neo550 = new ClosedLoopConfig();
+  ClosedLoopConfig AlgaeAngle = new ClosedLoopConfig();
   ClosedLoopConfig Neo = new ClosedLoopConfig();
   ClosedLoopConfig NeoElevator = new ClosedLoopConfig();
   ClosedLoopConfig NeoIntake = new ClosedLoopConfig();
 
-  //Count used for initilizing AnalogInit
+  // Count used for initilizing AnalogInit
   int Count = 0;
-  double []ModuleSums = new double [4];
+  double[] ModuleSums = new double[4];
   // Constants used to translate RPM to robot speed
   private final int WheelRotationsPerMeter = 27;
   private final int ShaftRotationsPerWheelRotation = 9;
@@ -93,7 +94,7 @@ public class Robot extends TimedRobot {
   // MaxDriveSpeed and MaxTurnSpeed is in meters per second
   private final double MaxDriveSpeed = 8;
   private final double MaxTurnSpeed = 10;
-  //Creating Position, Degree and Voltage variables for each motor
+  // Creating Position, Degree and Voltage variables for each motor
   double VoltageFL = 0;
   double PositionFL = 0;
   double VoltageFR = 0;
@@ -108,12 +109,12 @@ public class Robot extends TimedRobot {
   double DegreeBL = 0;
   double DegreeBR = 0;
 
-  //Setting The Tolerance/Dead Space of the Joystick and Gear Ratio
+  // Setting The Tolerance/Dead Space of the Joystick and Gear Ratio
   double JoystickTolerance = 0.09;
   double GearRatio = 54.8;
 
   // Initialize Motors
-  //DRIVE
+  // DRIVE
   TalonFX FrontLeftDrive = new TalonFX(MotorIDs.FrontLeftDriveID);
   SparkMax FrontLeftSteer = new SparkMax(MotorIDs.FrontLeftSteerID, MotorType.kBrushless);
   TalonFX FrontRightDrive = new TalonFX(MotorIDs.FrontRightDriveID);
@@ -122,12 +123,15 @@ public class Robot extends TimedRobot {
   SparkMax BackLeftSteer = new SparkMax(MotorIDs.BackLeftSteerID, MotorType.kBrushless);
   TalonFX BackRightDrive = new TalonFX(MotorIDs.BackRightDrive);
   SparkMax BackRightSteer = new SparkMax(MotorIDs.BackRightSteerID, MotorType.kBrushless);
-  //HOOK [ EDIT ]
+  // HOOK [ EDIT ]
   // SparkMax Hook = new SparkMax(MotorIDs.HookID, MotorType.kBrushless);
   // //INTAKE [ EDIT ]
-  // SparkFlex IntakeRoller = new SparkFlex(MotorIDs.IntakeRollerID, MotorType.kBrushless);
-  // SparkMax AngleLeft = new SparkMax(MotorIDs.AngleLeftID, MotorType.kBrushless);
-  // SparkMax AngleRight = new SparkMax(MotorIDs.AngleRightID, MotorType.kBrushless);
+  // SparkFlex IntakeRoller = new SparkFlex(MotorIDs.IntakeRollerID,
+  // MotorType.kBrushless);
+  // SparkMax AngleLeft = new SparkMax(MotorIDs.AngleLeftID,
+  // MotorType.kBrushless);
+  // SparkMax AngleRight = new SparkMax(MotorIDs.AngleRightID,
+  // MotorType.kBrushless);
 
   // Motor Array
   TalonFX[] DriveMotors = {
@@ -144,10 +148,10 @@ public class Robot extends TimedRobot {
   };
 
   VelocityVoltage[] TalonVoltage = {
-    new VelocityVoltage(0).withSlot(0),
-    new VelocityVoltage(0).withSlot(0),
-    new VelocityVoltage(0).withSlot(0),
-    new VelocityVoltage(0).withSlot(0) };
+      new VelocityVoltage(0).withSlot(0),
+      new VelocityVoltage(0).withSlot(0),
+      new VelocityVoltage(0).withSlot(0),
+      new VelocityVoltage(0).withSlot(0) };
 
   // PID Controllers Array
   private SparkClosedLoopController[] PIDSteerControllers = new SparkClosedLoopController[4];
@@ -193,16 +197,17 @@ public class Robot extends TimedRobot {
   SwerveModuleState[] OptimizedStates = new SwerveModuleState[4];
 
   Elevator ElevatorObject;
-   AlgaePickup AlgaeGrabber;
-   CoralIntakePlatform Intake;
-   Climber Climber;
+  AlgaePickup AlgaeGrabber;
+  CoralIntakePlatform Intake;
+  Climber Climber;
   RobotState State = new RobotState();
 
   double BLSTuningSetpoint = 0.0;
 
-  //Camera
-  // NetworkTable tagsTable = NetworkTableInstance.getDefault().getTable("apriltags");
-  //   IntegerArraySubscriber pubTags = tagsTable.getIntegerArrayTopic("tags").;
+  // Camera
+  // NetworkTable tagsTable =
+  // NetworkTableInstance.getDefault().getTable("apriltags");
+  // IntegerArraySubscriber pubTags = tagsTable.getIntegerArrayTopic("tags").;
 
   // Convert to chassis speeds
   // ChassisSpeeds chassisSpeeds = Kinematics.toChassisSpeeds(frontLeft, backLeft,
@@ -231,16 +236,18 @@ public class Robot extends TimedRobot {
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
 
-    //Setting PIDF Constants for each motor type
+    // Setting PIDF Constants for each motor type
     Neo550.pidf(1, .5, .1, .00001);
-    //Neo550.pidf(0, 0, 0, 0); //.05
-    //Neo.pidf(0, 0, 0, 0);
+    // Neo550.pidf(0, 0, 0, 0); //.05
+    // Neo.pidf(0, 0, 0, 0);
     Neo.pidf(.5, .0, .0, .0);
-    NeoElevator.pidf(0.012, 0, 0, 0); 
-     AlgaeGrabber = new AlgaePickup(Neo550);
-     Intake = new CoralIntakePlatform(NeoIntake);
-     Climber = new Climber(Neo);
-     ElevatorObject = new Elevator(NeoElevator);
+    NeoElevator.pidf(0.015, 0.000018, 0.040000, 0.000100);
+    AlgaeAngle.pidf(0,0,0,0);
+    AlgaeGrabber = new AlgaePickup(AlgaeAngle);
+    NeoIntake.pidf(0.02, 0, 0, 0);
+    Intake = new CoralIntakePlatform(NeoIntake);
+    Climber = new Climber(Neo);
+    ElevatorObject = new Elevator(NeoElevator);
 
     gyro.calibrate();
     for (int i = 0; i < 4; i++) {
@@ -255,7 +262,7 @@ public class Robot extends TimedRobot {
     analogs[0] = new AnalogContainer(SteerMotors[0].getAnalog(), 2.28, 1.12);
     analogs[1] = new AnalogContainer(SteerMotors[1].getAnalog(), 2.23, 1.88);
     analogs[2] = new AnalogContainer(SteerMotors[2].getAnalog(), 2.25, 2.12);
-    analogs[3] = new AnalogContainer(SteerMotors[3].getAnalog(), 2.25, 1.67);
+    analogs[3] = new AnalogContainer(SteerMotors[3].getAnalog(), 2.25, 1.81);
 
     // PID Values
     Prop = 1;// 1; //P = 0.000170
@@ -277,19 +284,17 @@ public class Robot extends TimedRobot {
     // SmartDashboard.putNumber("Min Output", MinOutput);
     // SmartDashboard.putNumber("BLSetpoint", 0);
 
-    DriveConfig.Slot0.kP = 0.11;//0.000170;
-    DriveConfig.Slot0.kI = 0;//0.000001;
-    DriveConfig.Slot0.kD = 0;//0.000020;
-    DriveConfig.Slot0.kS = 0.1;//0.000001;
-    DriveConfig.Slot0.kV = 0.12;//0.000001;
+    DriveConfig.Slot0.kP = 0.11;// 0.000170;
+    DriveConfig.Slot0.kI = 0;// 0.000001;
+    DriveConfig.Slot0.kD = 0;// 0.000020;
+    DriveConfig.Slot0.kS = 0.1;// 0.000001;
+    DriveConfig.Slot0.kV = 0.12;// 0.000001;
 
     double TalonkP = DriveConfig.Slot0.kP;
     double TalonkI = DriveConfig.Slot0.kI;
     double TalonkD = DriveConfig.Slot0.kD;
     double TalonkS = DriveConfig.Slot0.kS;
     double TalonkV = DriveConfig.Slot0.kV;
-
- 
 
     SmartDashboard.putNumber("Talon P Gain", TalonkP);
     SmartDashboard.putNumber("Talon I Gain", TalonkI);
@@ -307,12 +312,15 @@ public class Robot extends TimedRobot {
     // Applying Configs
     SteeringBaseConfig.apply(SteeringLoopConfig);
     SteeringBaseConfig.signals.analogPositionPeriodMs(10);
-    
+
     for (int i = 0; i < 4; i++) {
-    //  DriveMotors[i].configure(VelocityBaseConfig[i], ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+      // DriveMotors[i].configure(VelocityBaseConfig[i],
+      // ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
       SteerMotors[i].configure(SteeringBaseConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-      //DriveConfig.MotorOutput.Inverted = inverted[i]?InvertedValue.CounterClockwise_Positive:InvertedValue.Clockwise_Positive;
-      SmartDashboard.putString("Config Status "+ModuleOrder.values()[i], DriveMotors[i].getConfigurator().apply(DriveConfig).toString());
+      // DriveConfig.MotorOutput.Inverted =
+      // inverted[i]?InvertedValue.CounterClockwise_Positive:InvertedValue.Clockwise_Positive;
+      SmartDashboard.putString("Config Status " + ModuleOrder.values()[i],
+          DriveMotors[i].getConfigurator().apply(DriveConfig).toString());
     }
 
     RelativeOffset[ModuleOrder.FL.ordinal()] = 0;
@@ -347,52 +355,51 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
-    //Creating SmartDashboard entries of Relative and Absolute encoders for all motors
+    // Creating SmartDashboard entries of Relative and Absolute encoders for all
+    // motors
     for (int i = 0; i < 4; i++) {
       SmartDashboard.putNumber("Relative Rotations" + ModuleOrder.values()[i].toString(),
-        encoders[i + 4].getPosition());
+          encoders[i + 4].getPosition());
       SmartDashboard.putNumber("Absolute Rotations" + ModuleOrder.values()[i].toString(), analogs[i].getDegrees());
       SmartDashboard.putNumber("Relative Offset" + ModuleOrder.values()[i].toString(),
           analogs[i].offset * 360 / GearRatio);
       SmartDashboard.putNumber("Position" + ModuleOrder.values()[i].toString(), analogs[i].sensor.getPosition());
     }
-    
+
     SmartDashboard.putNumber("Gyro", gyro.getAngle());
-    if (Count < 10){
+    if (Count < 10) {
       Count++;
       for (int i = 0; i < 4; i++) {
-      ModuleSums[i] += analogs[i].getRotation();
+        ModuleSums[i] += analogs[i].getRotation();
       }
-    }
-    else if (Count == 10){
+    } else if (Count == 10) {
       AnalogInit();
       Count++;
     }
 
-    PIDTuning();
-
-    //Calling SmartDashboard encoder positions from each other class
+    // Calling SmartDashboard encoder positions from each other class
     ElevatorObject.DisplayPosition();
     AlgaeGrabber.DisplayPosition();
     Intake.DisplayPosition();
     Climber.DisplayPosition();
-    
-    
-    
+
     ElevatorObject.BreakBeamSignal();
     SmartDashboard.putNumber("tx", tx.getDouble(0));
     SmartDashboard.putNumber("ty", ty.getDouble(0));
     SmartDashboard.putNumber("ta", ta.getDouble(0));
     // [VARIABLES: 54700 max RPM, ~27 rotations per meter, 60 seconds per minute,
     // ~3.5mps for max speed]
-    // SmartDashboard.getNumber("FrontLeft Analog", analogs[0].sensor.getPosition());
+    // SmartDashboard.getNumber("FrontLeft Analog",
+    // analogs[0].sensor.getPosition());
     // SmartDashboard.getNumber("BackLeft Analog", analogs[1].sensor.getPosition());
-    // SmartDashboard.getNumber("FrontRight Analog", analogs[2].sensor.getPosition());
-    // SmartDashboard.getNumber("BackRight Analog", analogs[3].sensor.getPosition());
-    SmartDashboard.putNumber("FrontLeft Degrees Calculated",  analogs[0].getCalculatedAngle());
-    SmartDashboard.putNumber("BackLeft Degrees Calculated",   analogs[1].getCalculatedAngle());
+    // SmartDashboard.getNumber("FrontRight Analog",
+    // analogs[2].sensor.getPosition());
+    // SmartDashboard.getNumber("BackRight Analog",
+    // analogs[3].sensor.getPosition());
+    SmartDashboard.putNumber("FrontLeft Degrees Calculated", analogs[0].getCalculatedAngle());
+    SmartDashboard.putNumber("BackLeft Degrees Calculated", analogs[1].getCalculatedAngle());
     SmartDashboard.putNumber("FrontRight Degrees Calculated", analogs[2].getCalculatedAngle());
-    SmartDashboard.putNumber("BackRight Degrees Calculated",  analogs[3].getCalculatedAngle());
+    SmartDashboard.putNumber("BackRight Degrees Calculated", analogs[3].getCalculatedAngle());
   }
 
   private void PerformKinematics() {
@@ -409,7 +416,7 @@ public class Robot extends TimedRobot {
     for (int i = 0; i < 4; i++) {
       OptimizedStates[i] = angleMinimize(currentAngles[i], moduleStates[i], i);
     }
- 
+
     // Pass in all 4 optimized swerve module states as a list to
     // Kinematics.desaturateWheelSpeeds
     // to normalize the speeds against the max
@@ -436,7 +443,8 @@ public class Robot extends TimedRobot {
   public SwerveModuleState angleMinimize(double CurrentAngle, SwerveModuleState TargetState, int ModuleIndex) {
     double tempDegreeTarget = SmartDashboard.getNumber("AngleSetPoint", 0);
     double deltaAngle = TargetState.angle.getDegrees() - analogs[ModuleIndex].CalculatedAngle;
-    //TargetState.angle.getDegrees() - analogs[ModuleIndex].CalculatedAngle; (changed for testing)
+    // TargetState.angle.getDegrees() - analogs[ModuleIndex].CalculatedAngle;
+    // (changed for testing)
 
     /*
      * Issue is that the current angle is not consistent with the target angle.
@@ -460,9 +468,9 @@ public class Robot extends TimedRobot {
       deltaAngle += 180;
       TargetState.speedMetersPerSecond *= -1;
     }
-    
+
     TargetState.angle = new Rotation2d(((deltaAngle) % 360) * Math.PI / 180);
-    
+
     return TargetState;
   }
 
@@ -519,7 +527,7 @@ public class Robot extends TimedRobot {
     // Intake.Test();
     // AlgaeGrabber.Test();
 
-    //pubTags.getTopic().
+    // pubTags.getTopic().
 
     CheckButtonPresses();
     PerformActions();
@@ -528,15 +536,15 @@ public class Robot extends TimedRobot {
     TranslateY = JoystickR.getX() * Math.abs(-JoystickR.getX()) * MaxDriveSpeed;
     TranslateX = -JoystickR.getY() * Math.abs(-JoystickR.getY()) * MaxDriveSpeed;
     TranslateRotation = -JoystickL.getX() * MaxTurnSpeed;
-    
-    double angle = -gyro.getAngle()*Math.PI/180;//radians
-    double tempx = Math.cos(angle)*TranslateX-Math.sin(angle)*TranslateY;
-    double tempy = Math.sin(angle)*TranslateX+Math.cos(angle)*TranslateY;
 
-    TranslateX=tempx;
-    TranslateY=tempy;
+    double angle = -gyro.getAngle() * Math.PI / 180;// radians
+    double tempx = Math.cos(angle) * TranslateX - Math.sin(angle) * TranslateY;
+    double tempy = Math.sin(angle) * TranslateX + Math.cos(angle) * TranslateY;
 
-    //Applying Joystick Tolerance
+    TranslateX = tempx;
+    TranslateY = tempy;
+
+    // Applying Joystick Tolerance
     if (Math.abs(TranslateX) < JoystickTolerance)
       TranslateX = 0.0;
     if (Math.abs(TranslateY) < JoystickTolerance)
@@ -553,7 +561,6 @@ public class Robot extends TimedRobot {
     double[] DeltaAngles = BoundaryCorrection(OptimizedStates, AngleList);
     // [MAXIMUM OBSERVED: 1.82 m/s] //
 
-
     applyDrive(DeltaAngles);
     for (int i = 0; i < 4; i++) {
       SmartDashboard.putNumber("Angle Setpoint" + ModuleOrder.values()[i].toString(),
@@ -566,119 +573,134 @@ public class Robot extends TimedRobot {
   }
 
   private void CheckButtonPresses() {
-    //Buttons for Algae
-    if (JoystickL.getRawButtonPressed(8)){
+    // Drop algae angle and run until pickup
+    if (JoystickL.getRawButtonPressed(8)) {
       State.PickupAlgae = true;
       State.EjectAlgae = false;
     }
-    if (JoystickL.getRawButtonPressed(9)){
+    // Run algae motor until ejected
+    if (JoystickL.getRawButtonPressed(9)) {
       State.PickupAlgae = false;
       State.EjectAlgae = true;
     }
+    // run until coral is fully seated
     if (JoystickR.getRawButtonPressed(11)) {
-      State.IntakeCoral = true; 
+      State.IntakeCoral = true;
       State.ScoreCoral = false;
     }
+    // score coral (run until released)
     if (JoystickR.getRawButtonPressed(10)) {
-      State.IntakeCoral = false; 
+      State.IntakeCoral = false;
       State.ScoreCoral = true;
     }
+    // move elevator to trough scoring height
     if (JoystickR.getRawButtonPressed(2)) {
       State.CurrentHeight = ElevatorPositions.Tray.ordinal();
       State.ElevatorMoving = true;
     }
+    // move elvator to first pipe scoring height
     if (JoystickR.getRawButtonPressed(4)) {
       State.CurrentHeight = ElevatorPositions.First.ordinal();
       State.ElevatorMoving = true;
     }
+    // move elevator to second pipe scoring height
     if (JoystickR.getRawButtonPressed(3)) {
       State.CurrentHeight = ElevatorPositions.Second.ordinal();
       State.ElevatorMoving = true;
     }
+    // move elevator to intake position
     if (JoystickR.getRawButtonPressed(5)) {
       State.CurrentHeight = ElevatorPositions.Load.ordinal();
       State.IntakeCoral = true;
       State.ElevatorMoving = true;
     }
+    // move elevator to 0 position
     if (JoystickR.getRawButtonPressed(9)) {
       State.CurrentHeight = ElevatorPositions.Home.ordinal();
       State.ElevatorMoving = true;
     }
-    if(JoystickR.getRawButtonPressed(10)){
+    // toggle climb prep (move intake ramp and algae pickup)
+    if (JoystickR.getRawButtonPressed(10)) {
       State.InClimbPrep = !State.InClimbPrep;
       State.ClimbPrepInProgress = true;
     }
-    if(JoystickL.getRawButtonPressed(8)){
-      gyro.calibrate();
+    // reset Yaw
+    if (JoystickL.getRawButtonPressed(8)) {
+      gyro.calibrate();// Incorrect function call
     }
-    if(JoystickR.getRawButton(1)){
+    // run coral eject while held
+    if (JoystickR.getRawButton(1)) {
       State.ScoreCoral = true;
     }
-    if(JoystickL.getRawButtonPressed(10))
-    {
+    // run coral until it is fully seated and will not interfere with
+    if (JoystickL.getRawButtonPressed(10)) {
       State.ClearCoral = true;
     }
-    if(JoystickL.getRawButtonPressed(3))
-    {
+    // Temp - revisit with finished climber
+    // Extends the climber out
+    if (JoystickL.getRawButtonPressed(3)) {
       // TODO - use the state machine
       Climber.ExtendClimber();
     }
-    if(JoystickL.getRawButtonPressed(2))
-    {
+    // Temp - revisit with finished climber
+    // Retracts the climber
+    if (JoystickL.getRawButtonPressed(2)) {
       // TODO - use the state machine
       Climber.RetractClimber();
     }
+    // manual adjust elevator up
+    if (JoystickR.getRawButtonPressed(11)) {
+      ElevatorObject.FineAdjustment(-3);
+    }
+    //manual adjust elevator down
+    if (JoystickR.getRawButtonPressed(10)) {
+      ElevatorObject.FineAdjustment(3);
+    }
   }
 
-  public void PerformActions(){
-    // if (State.PickupAlgae) {
-    //   State.PickupAlgae = !AlgaeGrabber.Pickup();
-    // }
-    // if (State.EjectAlgae) {
-    //   State.EjectAlgae = !AlgaeGrabber.Eject();
-    // }
-    if(State.ClearCoral){
-      State.ClearCoral = !ElevatorObject.IntakeCoral();
+  public void PerformActions() {
+    if (State.PickupAlgae) {
+      State.PickupAlgae = AlgaeGrabber.Pickup();
+    }
+    if (State.EjectAlgae) {
+      State.EjectAlgae = AlgaeGrabber.Eject();
+    }
+    if (State.ClearCoral) {
+      State.ClearCoral = ElevatorObject.IntakeCoral();
     }
     if (State.IntakeCoral) {
-      State.IntakeCoral = !Intake.GoToIntake();
+      State.IntakeCoral = Intake.GoToIntake();
     }
     if (State.ScoreCoral) {
       State.ScoreCoral = ElevatorObject.ScoreCoral(JoystickR.getRawButton(1));
     }
     if (State.ElevatorMoving) {
-      State.ElevatorMoving = !ElevatorObject.GoToHeight(State.CurrentHeight);
+      State.ElevatorMoving = ElevatorObject.GoToHeight(State.CurrentHeight);
     }
-    // if(State.ClimbPrepInProgress){
-    //   State.ClimbPrepInProgress = !Intake.GoToPosition(State.InClimbPrep);
-    // }
+    if (State.ClimbPrepInProgress) {
+      State.ClimbPrepInProgress = Intake.GoToClimb();
+    }
   }
 
   private void PIDTuning() {
 
-
     // //Velocity Loop numbers
-    //double P = SmartDashboard.getNumber("P Gain", 0); // 0.000170
-    //double I = SmartDashboard.getNumber("I Gain", 0); // 0.000001
-    //double D = SmartDashboard.getNumber("D Gain", 0); // 0.000020
-    //double IZ = SmartDashboard.getNumber("I Zone", 0);
-    //double FF = SmartDashboard.getNumber("Feed Forward", 0); // 0.000001
-    //double MaxOut = SmartDashboard.getNumber("Max Output", 1);
-    //double MinOut = SmartDashboard.getNumber("Min Output", -1);
+    double P = SmartDashboard.getNumber("P Gain", 0.012); // 0.000170
+    double I = SmartDashboard.getNumber("I Gain", 0); // 0.000001
+    double D = SmartDashboard.getNumber("D Gain", 0); // 0.000020
+    double IZ = SmartDashboard.getNumber("I Zone", 0);
+    double FF = SmartDashboard.getNumber("Feed Forward", 0); // 0.000001
+    double MaxOut = SmartDashboard.getNumber("Max Output", 1);
+    double MinOut = SmartDashboard.getNumber("Min Output", -1);
 
-    // Values for Coral Intake PID
-    double P = 0.02;
-    double I = 0.0f;
-    double D = 0.0f;
-    double FF = 0.0f;
-    NeoIntake.pidf(P, I, D, FF);
-    Intake.UpdatePID(NeoIntake);
+    AlgaeAngle.pidf(P, I, D, FF);
+    AlgaeGrabber.UpdatePID(AlgaeAngle);
 
     // SmartDashboard.putNumber("P Gain", P); // 0.000170
     // SmartDashboard.putNumber("I Gain", I); // 0.000001
     // SmartDashboard.putNumber("D Gain", D); // 0.000020
-    // SmartDashboard.putNumber("I Zone", IZ);
     // SmartDashboard.putNumber("Feed Forward", FF); // 0.000001
+    // SmartDashboard.putNumber("I Zone", IZ);
     // SmartDashboard.putNumber("Max Output", MaxOut);
     // SmartDashboard.putNumber("Min Output", MinOut);
   }
@@ -702,7 +724,7 @@ public class Robot extends TimedRobot {
     SteeringLoopConfig.outputRange(-1, 1);
     SteeringBaseConfig.smartCurrentLimit(15); // Default limit is 80A - this limit is too high for a NEO 550
 
-    SteeringBaseConfig.apply(SteeringLoopConfig); 
+    SteeringBaseConfig.apply(SteeringLoopConfig);
 
     double TalonkP = SmartDashboard.getNumber("TalonkP", 0);
     double TalonkI = SmartDashboard.getNumber("TalonkI", 0);
@@ -717,9 +739,11 @@ public class Robot extends TimedRobot {
     DriveConfig.Slot0.kV = TalonkV;
 
     for (int i = 0; i < 4; i++) {
-        //DriveMotors[i].configure(VelocityBaseConfig[i], ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
-        SteerMotors[i].configure(SteeringBaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
-        SmartDashboard.putString("Config Status "+ModuleOrder.values()[i], DriveMotors[i].getConfigurator().apply(DriveConfig.Slot0).toString());
+      // DriveMotors[i].configure(VelocityBaseConfig[i],
+      // ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+      SteerMotors[i].configure(SteeringBaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+      SmartDashboard.putString("Config Status " + ModuleOrder.values()[i],
+          DriveMotors[i].getConfigurator().apply(DriveConfig.Slot0).toString());
 
     }
   }
@@ -730,8 +754,9 @@ public class Robot extends TimedRobot {
         OptimizedStates[1].speedMetersPerSecond,
         OptimizedStates[2].speedMetersPerSecond,
         -OptimizedStates[3].speedMetersPerSecond,
-        //Temporarily multiplying by 0.0 for testing.
-    }; double[] SteerSetPoints = {
+        // Temporarily multiplying by 0.0 for testing.
+    };
+    double[] SteerSetPoints = {
         OptimizedStates[0].angle.getRotations(),
         OptimizedStates[1].angle.getRotations(),
         OptimizedStates[2].angle.getRotations(),
@@ -739,29 +764,35 @@ public class Robot extends TimedRobot {
     };
 
     for (int i = 0; i < 4; i++) {
-        SteerSetPoints[i] = (DeltaAngles[i] * -GearRatio / 360) + analogs[i].getCalculatedPosition();
+      SteerSetPoints[i] = (DeltaAngles[i] * -GearRatio / 360) + analogs[i].getCalculatedPosition();
       if (Math.abs(DriveSetPoints[i]) < .1) {
         DriveSetPoints[i] = 0;
       }
     }
     double speed = SmartDashboard.getNumber("Speed", 0);
     for (int i = 0; i < 4; i++) {
-      TalonVoltage[i].FeedForward=.05;
-        SmartDashboard.putString("TargetDrive Status" + ModuleOrder.values()[i].toString(),
-        // DriveMotors[i].setControl(TalonVoltage[i].withVelocity(DriveSetPoints[i] * RotationsPerMeter * SecondsPerMinute)).toString());
-        DriveMotors[i].setControl(TalonVoltage[i].withVelocity(DriveSetPoints[i] * WheelRotationsPerMeter*ShaftRotationsPerWheelRotation).withFeedForward(DriveSetPoints[i])).toString());
-        SmartDashboard.putNumber("Normalized Velocity " + ModuleOrder.values()[i].toString(), DriveMotors[i].getVelocity().getValueAsDouble());
-        SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i].toString(), PIDSteerControllers[i]
-            .setReference(SteerSetPoints[i], SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward).toString());
-        analogs[i].CalculatedPosition = SteerSetPoints[i];
-        analogs[i].CalculatedAngle += DeltaAngles[i];
-        if (analogs[i].CalculatedAngle > 180) {
-          analogs[i].CalculatedAngle -= 360;
-        } else if (analogs[i].CalculatedAngle < -180) {
-          analogs[i].CalculatedAngle += 360;
-        }
-        //DriveMotors[i].get
-          }
+      TalonVoltage[i].FeedForward = .05;
+      SmartDashboard.putString("TargetDrive Status" + ModuleOrder.values()[i].toString(),
+          // DriveMotors[i].setControl(TalonVoltage[i].withVelocity(DriveSetPoints[i] *
+          // RotationsPerMeter * SecondsPerMinute)).toString());
+          DriveMotors[i].setControl(
+              TalonVoltage[i].withVelocity(DriveSetPoints[i] * WheelRotationsPerMeter * ShaftRotationsPerWheelRotation)
+                  .withFeedForward(DriveSetPoints[i]))
+              .toString());
+      SmartDashboard.putNumber("Normalized Velocity " + ModuleOrder.values()[i].toString(),
+          DriveMotors[i].getVelocity().getValueAsDouble());
+      SmartDashboard.putString("TargetSteer Status" + ModuleOrder.values()[i].toString(), PIDSteerControllers[i]
+          .setReference(SteerSetPoints[i], SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0, FeedForward)
+          .toString());
+      analogs[i].CalculatedPosition = SteerSetPoints[i];
+      analogs[i].CalculatedAngle += DeltaAngles[i];
+      if (analogs[i].CalculatedAngle > 180) {
+        analogs[i].CalculatedAngle -= 360;
+      } else if (analogs[i].CalculatedAngle < -180) {
+        analogs[i].CalculatedAngle += 360;
+      }
+      // DriveMotors[i].get
+    }
     SmartDashboard.putNumber("Speed", speed);
   }
 
@@ -785,11 +816,36 @@ public class Robot extends TimedRobot {
   /** This function is called once when test mode is enabled. */
   @Override
   public void testInit() {
+    SmartDashboard.putNumber("P Gain", 0.012); // 0.000170
+    SmartDashboard.putNumber("I Gain", 0); // 0.000001
+    SmartDashboard.putNumber("D Gain", 0); // 0.000020
+    SmartDashboard.putNumber("Feed Forward", 0); // 0.000001
   }
 
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {
+    if (JoystickR.getRawButtonPressed(10)) {
+      ElevatorObject.ToggleBooter();
+    }
+    if (JoystickR.getRawButtonPressed(9)) {
+      ElevatorObject.FineAdjustment(-10);
+    }
+    if (JoystickR.getRawButtonPressed(8)) {
+      ElevatorObject.FineAdjustment(10);
+    }
+    if (JoystickL.getRawButtonPressed(10)) {
+      State.ClearCoral = true;
+    }
+    if (JoystickL.getRawButtonPressed(9)) {
+      State.PickupAlgae = false;
+      State.EjectAlgae = true;
+    }
+    AlgaeGrabber.Test();
+    Climber.Test();
+    PerformActions();
+    PIDTuning();
+
   }
 
   /** This function is called once when the robot is first started up. */

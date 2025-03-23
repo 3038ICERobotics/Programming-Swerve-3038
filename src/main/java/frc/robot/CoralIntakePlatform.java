@@ -63,16 +63,16 @@ public class CoralIntakePlatform {
         SmartDashboard.putNumber("CoralIntake Setpoint", Setpoint);
     }
 
+    //return true to continue, false to stop
     public boolean GoToIntake() {
         PID.setReference(FeedPosition, ControlType.kPosition);
-
-        return true;
+        return false;
        // return Encoder.getPosition() == TargetPosition;
     }
+    //return true to continue, false to stop
     public boolean GoToClimb() {
         PID.setReference(PrepPosition, ControlType.kPosition);
-
-        return true;
+        return false;
        // return Encoder.getPosition() == TargetPosition;
     }
 
