@@ -241,8 +241,8 @@ public class Robot extends TimedRobot {
     // Neo550.pidf(0, 0, 0, 0); //.05
     // Neo.pidf(0, 0, 0, 0);
     Neo.pidf(.5, .0, .0, .0);
-    NeoElevator.pidf(0.015, 0.000018, 0.040000, 0.000100);
-    AlgaeAngle.pidf(0,0,0,0);
+    NeoElevator.pidf(0.015, 0.000018, 0.40000, 0.00002);
+    AlgaeAngle.pidf(.3,0.001,1.2,0);
     AlgaeGrabber = new AlgaePickup(AlgaeAngle);
     NeoIntake.pidf(0.02, 0, 0, 0);
     Intake = new CoralIntakePlatform(NeoIntake);
@@ -573,26 +573,6 @@ public class Robot extends TimedRobot {
   }
 
   private void CheckButtonPresses() {
-    // Drop algae angle and run until pickup
-    if (JoystickL.getRawButtonPressed(8)) {
-      State.PickupAlgae = true;
-      State.EjectAlgae = false;
-    }
-    // Run algae motor until ejected
-    if (JoystickL.getRawButtonPressed(9)) {
-      State.PickupAlgae = false;
-      State.EjectAlgae = true;
-    }
-    // run until coral is fully seated
-    if (JoystickR.getRawButtonPressed(11)) {
-      State.IntakeCoral = true;
-      State.ScoreCoral = false;
-    }
-    // score coral (run until released)
-    if (JoystickR.getRawButtonPressed(10)) {
-      State.IntakeCoral = false;
-      State.ScoreCoral = true;
-    }
     // move elevator to trough scoring height
     if (JoystickR.getRawButtonPressed(2)) {
       State.CurrentHeight = ElevatorPositions.Tray.ordinal();
@@ -608,34 +588,31 @@ public class Robot extends TimedRobot {
       State.CurrentHeight = ElevatorPositions.Second.ordinal();
       State.ElevatorMoving = true;
     }
+    // run coral eject while held
+    if (JoystickR.getRawButton(1)) {
+      State.ScoreCoral = true;
+    }
     // move elevator to intake position
     if (JoystickR.getRawButtonPressed(5)) {
       State.CurrentHeight = ElevatorPositions.Load.ordinal();
       State.IntakeCoral = true;
+      State.ClearCoral = true;
       State.ElevatorMoving = true;
+    }
+    // manual adjust elevator up
+    if (JoystickR.getRawButtonPressed(11)) {
+      ElevatorObject.FineAdjustment(-3);
+    }
+    //manual adjust elevator down
+    if (JoystickR.getRawButtonPressed(10)) {
+      ElevatorObject.FineAdjustment(3);
     }
     // move elevator to 0 position
     if (JoystickR.getRawButtonPressed(9)) {
       State.CurrentHeight = ElevatorPositions.Home.ordinal();
       State.ElevatorMoving = true;
     }
-    // toggle climb prep (move intake ramp and algae pickup)
-    if (JoystickR.getRawButtonPressed(10)) {
-      State.InClimbPrep = !State.InClimbPrep;
-      State.ClimbPrepInProgress = true;
-    }
-    // reset Yaw
-    if (JoystickL.getRawButtonPressed(8)) {
-      gyro.calibrate();// Incorrect function call
-    }
-    // run coral eject while held
-    if (JoystickR.getRawButton(1)) {
-      State.ScoreCoral = true;
-    }
-    // run coral until it is fully seated and will not interfere with
-    if (JoystickL.getRawButtonPressed(10)) {
-      State.ClearCoral = true;
-    }
+
     // Temp - revisit with finished climber
     // Extends the climber out
     if (JoystickL.getRawButtonPressed(3)) {
@@ -648,22 +625,39 @@ public class Robot extends TimedRobot {
       // TODO - use the state machine
       Climber.RetractClimber();
     }
-    // manual adjust elevator up
-    if (JoystickR.getRawButtonPressed(11)) {
-      ElevatorObject.FineAdjustment(-3);
+    // Drop algae angle and kick
+    if (JoystickL.getRawButtonPressed(4)) {
+      State.KickAlgae = true;
+      State.HomeAlgae = false;
     }
-    //manual adjust elevator down
+    // Lift
+    if (JoystickL.getRawButtonPressed(5)) {
+      State.KickAlgae = false;
+      State.HomeAlgae = true;
+    }
+    
+    
+    
+    // toggle climb prep (move intake ramp and algae pickup)
     if (JoystickR.getRawButtonPressed(10)) {
-      ElevatorObject.FineAdjustment(3);
+      State.InClimbPrep = !State.InClimbPrep;
+      State.ClimbPrepInProgress = true;
+    }
+    // reset Yaw
+    if (JoystickL.getRawButtonPressed(8)) {
+      gyro.reset();
+    }
+    if (JoystickR.getRawButtonPressed(7)) {
+      ElevatorObject.ToggleBooter();
     }
   }
 
   public void PerformActions() {
-    if (State.PickupAlgae) {
-      State.PickupAlgae = AlgaeGrabber.Pickup();
+    if (State.KickAlgae) {
+      State.KickAlgae = AlgaeGrabber.KickAlgae();
     }
-    if (State.EjectAlgae) {
-      State.EjectAlgae = AlgaeGrabber.Eject();
+    if (State.HomeAlgae) {
+      State.HomeAlgae = AlgaeGrabber.HomeAlgae();
     }
     if (State.ClearCoral) {
       State.ClearCoral = ElevatorObject.IntakeCoral();
@@ -693,8 +687,8 @@ public class Robot extends TimedRobot {
     double MaxOut = SmartDashboard.getNumber("Max Output", 1);
     double MinOut = SmartDashboard.getNumber("Min Output", -1);
 
-    AlgaeAngle.pidf(P, I, D, FF);
-    AlgaeGrabber.UpdatePID(AlgaeAngle);
+   // AlgaeAngle.pidf(P, I, D, FF);
+   // AlgaeGrabber.UpdatePID(AlgaeAngle);
 
     // SmartDashboard.putNumber("P Gain", P); // 0.000170
     // SmartDashboard.putNumber("I Gain", I); // 0.000001
@@ -837,11 +831,7 @@ public class Robot extends TimedRobot {
     if (JoystickL.getRawButtonPressed(10)) {
       State.ClearCoral = true;
     }
-    if (JoystickL.getRawButtonPressed(9)) {
-      State.PickupAlgae = false;
-      State.EjectAlgae = true;
-    }
-    AlgaeGrabber.Test();
+    //AlgaeGrabber.Test();
     Climber.Test();
     //ElevatorObject.Test();
     PerformActions();

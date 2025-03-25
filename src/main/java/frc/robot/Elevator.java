@@ -96,7 +96,7 @@ public class Elevator {
 
     double CurrentTargetSetpoint = 0;
     float HomePosition = 0;
-    float LoadPosition = -9;
+    float LoadPosition = -6;
     float TrayPosition = -10;
     float FirstPosition = -17;
     float SecondPosition = -30;
