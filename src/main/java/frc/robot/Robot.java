@@ -841,7 +841,7 @@ public class Robot extends TimedRobot {
       State.PickupAlgae = false;
       State.EjectAlgae = true;
     }
-    //AlgaeGrabber.Test();
+    AlgaeGrabber.Test();
     Climber.Test();
     //ElevatorObject.Test();
     PerformActions();
