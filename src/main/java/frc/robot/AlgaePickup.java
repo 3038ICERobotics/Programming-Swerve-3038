@@ -7,6 +7,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.ClosedLoopConfig;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -34,6 +35,7 @@ public class AlgaePickup {
         SmartDashboard.putNumber("AlgaePickup Setpoint", 0);
         BaseConfig = new SparkMaxConfig();
         BaseConfig.apply(config);
+        BaseConfig.idleMode(IdleMode.kCoast);
         AlgaeLeft.configure(BaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
         AlgaeEncoder = AlgaeLeft.getEncoder();
         AlgaeEncoder.setPosition(0);

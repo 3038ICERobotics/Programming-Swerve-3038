@@ -111,7 +111,7 @@ public class Robot extends TimedRobot {
 
   // Setting The Tolerance/Dead Space of the Joystick and Gear Ratio
   double JoystickTolerance = 0.09;
-  double GearRatio = 54.8;
+  double GearRatio = 54.74;
 
   // Initialize Motors
   // DRIVE
@@ -829,10 +829,10 @@ public class Robot extends TimedRobot {
       ElevatorObject.ToggleBooter();
     }
     if (JoystickR.getRawButtonPressed(9)) {
-      ElevatorObject.FineAdjustment(-10);
+      ElevatorObject.FineAdjustment(-1);
     }
     if (JoystickR.getRawButtonPressed(8)) {
-      ElevatorObject.FineAdjustment(10);
+      ElevatorObject.FineAdjustment(1);
     }
     if (JoystickL.getRawButtonPressed(10)) {
       State.ClearCoral = true;
@@ -841,8 +841,9 @@ public class Robot extends TimedRobot {
       State.PickupAlgae = false;
       State.EjectAlgae = true;
     }
-    AlgaeGrabber.Test();
+    //AlgaeGrabber.Test();
     Climber.Test();
+    //ElevatorObject.Test();
     PerformActions();
     PIDTuning();
 

@@ -96,9 +96,9 @@ public class Elevator {
 
     double CurrentTargetSetpoint = 0;
     float HomePosition = 0;
-    float LoadPosition = -10;
+    float LoadPosition = -9;
     float TrayPosition = -10;
-    float FirstPosition = -20;
+    float FirstPosition = -17;
     float SecondPosition = -30;
     // float ThirdPosition = 5;
     float[] HeightRotations = { HomePosition, LoadPosition, TrayPosition, FirstPosition, SecondPosition,
@@ -121,6 +121,13 @@ public class Elevator {
         return false; // Always return false - else we will never be at exact setpoint
         // Elevator goes to the desired height.
         // True if elevator is at the correct position; false otherwise.
+    }
+
+    public void Test (){
+        double Setpoint =  SmartDashboard.getNumber("Elevator Setpoint", 0);
+        ElevatorPIDLeft.setReference(Setpoint, ControlType.kPosition);
+        ElevatorPIDRight.setReference(Setpoint, ControlType.kPosition);
+        
     }
 
     public void FineAdjustment(double deltaPosition) {
