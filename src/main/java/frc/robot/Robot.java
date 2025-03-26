@@ -239,7 +239,7 @@ public class Robot extends TimedRobot {
     // Setting PIDF Constants for each motor type
     Neo550.pidf(1, .5, .1, .00001);
     Neo.pidf(.5, .0, .0, .0);
-    NeoElevator.pidf(0.015, 0.000018, 0.40000, 0.00002);
+    NeoElevator.pidf(0.018, 0.000018, 0.80000, 0.00002);
     AlgaeAngle.pidf(.3, 0.001, 1.2, 0);
     AlgaeGrabber = new AlgaePickup(AlgaeAngle);
     NeoIntake.pidf(0.02, 0, 0, 0);
@@ -573,18 +573,24 @@ public class Robot extends TimedRobot {
   private void CheckButtonPresses() {
     // move elevator to trough scoring height
     if (JoystickR.getRawButtonPressed(2)) {
-      State.CurrentHeight = ElevatorPositions.Tray.ordinal();
-      State.ElevatorMoving = true;
+      // State.CurrentHeight = ElevatorPositions.Tray.ordinal();
+      // State.ElevatorMoving = true;
+      //testing fine down
+      ElevatorObject.FineAdjustment(1.5);
     }
     // move elvator to first pipe scoring height
     if (JoystickR.getRawButtonPressed(4)) {
-      State.CurrentHeight = ElevatorPositions.First.ordinal();
-      State.ElevatorMoving = true;
+      // State.CurrentHeight = ElevatorPositions.First.ordinal();
+      // State.ElevatorMoving = true;
+      //Testing Big up
+      ElevatorObject.FineAdjustment(-4);
     }
     // move elevator to second pipe scoring height
     if (JoystickR.getRawButtonPressed(3)) {
-      State.CurrentHeight = ElevatorPositions.Second.ordinal();
-      State.ElevatorMoving = true;
+      // State.CurrentHeight = ElevatorPositions.Second.ordinal();
+      // State.ElevatorMoving = true;
+      //Testing fine up
+      ElevatorObject.FineAdjustment(-1.5);
     }
     // run coral eject while held
     if (JoystickR.getRawButton(1)) {
@@ -592,10 +598,10 @@ public class Robot extends TimedRobot {
     }
     // move elevator to intake position
     if (JoystickR.getRawButtonPressed(5)) {
-      State.CurrentHeight = ElevatorPositions.Load.ordinal();
-      State.IntakeCoral = true;
+      // State.CurrentHeight = ElevatorPositions.Load.ordinal();
+      // State.IntakeCoral = true;
       State.ClearCoral = true;
-      State.ElevatorMoving = true;
+      // State.ElevatorMoving = true;
     }
     // manual adjust elevator up
     if (JoystickR.getRawButtonPressed(11)) {
