@@ -61,15 +61,25 @@ public class AlgaePickup {
 
     // return true to continue, false to stop
     public boolean HomeAlgae() {
-        AlgaePID.setReference(HomePosition, ControlType.kPosition);
+        boolean result = LimitSwitch.get();
+        if (result) {
+            AlgaeLeft.set(-.08);
+        } else {
+            AlgaeLeft.set(0);
+        }
         AlgaeFlex.set(0);
-        return false;
+        return result;
     }
 
     // return true to continue, false to stop
     public boolean KickAlgae() {
-        AlgaePID.setReference(PickUpPosition, ControlType.kPosition);
+        boolean result = LimitSwitch.get();
+        if (!result) {
+            AlgaeLeft.set(.08);
+        } else {
+            AlgaeLeft.set(0);
+        }
         AlgaeFlex.set(.6);
-        return false;
+        return !result;
     }
 }

@@ -238,11 +238,9 @@ public class Robot extends TimedRobot {
 
     // Setting PIDF Constants for each motor type
     Neo550.pidf(1, .5, .1, .00001);
-    // Neo550.pidf(0, 0, 0, 0); //.05
-    // Neo.pidf(0, 0, 0, 0);
     Neo.pidf(.5, .0, .0, .0);
     NeoElevator.pidf(0.015, 0.000018, 0.40000, 0.00002);
-    AlgaeAngle.pidf(.3,0.001,1.2,0);
+    AlgaeAngle.pidf(.3, 0.001, 1.2, 0);
     AlgaeGrabber = new AlgaePickup(AlgaeAngle);
     NeoIntake.pidf(0.02, 0, 0, 0);
     Intake = new CoralIntakePlatform(NeoIntake);
@@ -603,14 +601,13 @@ public class Robot extends TimedRobot {
     if (JoystickR.getRawButtonPressed(11)) {
       ElevatorObject.FineAdjustment(-3);
     }
-    //manual adjust elevator down
+    // manual adjust elevator down
     if (JoystickR.getRawButtonPressed(10)) {
       ElevatorObject.FineAdjustment(3);
     }
     // move elevator to 0 position
     if (JoystickR.getRawButtonPressed(9)) {
-      State.CurrentHeight = ElevatorPositions.Home.ordinal();
-      State.ElevatorMoving = true;
+      ElevatorObject.Rezero();
     }
 
     // Temp - revisit with finished climber
@@ -635,13 +632,13 @@ public class Robot extends TimedRobot {
       State.KickAlgae = false;
       State.HomeAlgae = true;
     }
-    
-    
-    
+
     // toggle climb prep (move intake ramp and algae pickup)
-    if (JoystickR.getRawButtonPressed(10)) {
+    if (JoystickL.getRawButtonPressed(10)) {
       State.InClimbPrep = !State.InClimbPrep;
       State.ClimbPrepInProgress = true;
+      State.CurrentHeight = ElevatorPositions.Home.ordinal();
+      State.ElevatorMoving = true;
     }
     // reset Yaw
     if (JoystickL.getRawButtonPressed(8)) {
@@ -672,7 +669,11 @@ public class Robot extends TimedRobot {
       State.ElevatorMoving = ElevatorObject.GoToHeight(State.CurrentHeight);
     }
     if (State.ClimbPrepInProgress) {
-      State.ClimbPrepInProgress = Intake.GoToClimb();
+      if (State.InClimbPrep) {
+        State.ClimbPrepInProgress = Intake.GoToClimb();
+      } else {
+        State.ClimbPrepInProgress = Intake.GoToIntake();
+      }
     }
   }
 
@@ -687,8 +688,8 @@ public class Robot extends TimedRobot {
     double MaxOut = SmartDashboard.getNumber("Max Output", 1);
     double MinOut = SmartDashboard.getNumber("Min Output", -1);
 
-   // AlgaeAngle.pidf(P, I, D, FF);
-   // AlgaeGrabber.UpdatePID(AlgaeAngle);
+    // AlgaeAngle.pidf(P, I, D, FF);
+    // AlgaeGrabber.UpdatePID(AlgaeAngle);
 
     // SmartDashboard.putNumber("P Gain", P); // 0.000170
     // SmartDashboard.putNumber("I Gain", I); // 0.000001
@@ -819,21 +820,10 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {
-    if (JoystickR.getRawButtonPressed(10)) {
-      ElevatorObject.ToggleBooter();
-    }
-    if (JoystickR.getRawButtonPressed(9)) {
-      ElevatorObject.FineAdjustment(-1);
-    }
-    if (JoystickR.getRawButtonPressed(8)) {
-      ElevatorObject.FineAdjustment(1);
-    }
-    if (JoystickL.getRawButtonPressed(10)) {
-      State.ClearCoral = true;
-    }
-    //AlgaeGrabber.Test();
-    Climber.Test();
-    //ElevatorObject.Test();
+    CheckButtonPresses();
+    // AlgaeGrabber.Test();
+    // Climber.Test();
+    // ElevatorObject.Test();
     PerformActions();
     PIDTuning();
 

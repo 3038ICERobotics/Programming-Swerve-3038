@@ -62,17 +62,17 @@ public class Elevator {
         RightElevatorEncoder.setPosition(0);
         LeftElevatorEncoder.setPosition(0);
 
-
         /* Algae */
         AlgaeEncoder = AlgaeBooter.getEncoder();
         AlgaeEncoder.setPosition(0);
-        AlgaeBooterPIDConfig.pidf(1,0,0.05,0);
+        AlgaeBooterPIDConfig.pidf(1, 0, 0.05, 0);
         AlgaeBooterBaseConfig.apply(AlgaeBooterPIDConfig);
         AlgaeBooterBaseConfig.idleMode(IdleMode.kBrake);
         AlgaeBooterBaseConfig.smartCurrentLimit(20); // Default limit is 80A - this limit is too high for a NEO 550
-        AlgaeBooter.configure(AlgaeBooterBaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        AlgaeBooter.configure(AlgaeBooterBaseConfig, ResetMode.kNoResetSafeParameters,
+                PersistMode.kNoPersistParameters);
         AlgaeBooterPID = AlgaeBooter.getClosedLoopController();
-        
+
     }
 
     public void DisplayPosition() {
@@ -81,6 +81,11 @@ public class Elevator {
         SmartDashboard.putNumber("AlgaeBooter Encoder", AlgaeEncoder.getPosition());
         SmartDashboard.putNumber("Elevator Target", CurrentTargetSetpoint);
         BreakBeamSignal();
+    }
+
+    public void Rezero() {
+        RightElevatorEncoder.setPosition(0);
+        LeftElevatorEncoder.setPosition(0);
     }
 
     public void UpdatePID(ClosedLoopConfig config) {
@@ -104,7 +109,7 @@ public class Elevator {
     float[] HeightRotations = { HomePosition, LoadPosition, TrayPosition, FirstPosition, SecondPosition,
     };
 
-    //return true to continue, false to stop
+    // return true to continue, false to stop
     public boolean GoToHeight(int TargetPosition) {
         boolean Result = false;
         CurrentTargetSetpoint = HeightRotations[TargetPosition];
@@ -123,25 +128,25 @@ public class Elevator {
         // True if elevator is at the correct position; false otherwise.
     }
 
-    public void Test (){
-        double Setpoint =  SmartDashboard.getNumber("Elevator Setpoint", 0);
+    public void Test() {
+        double Setpoint = SmartDashboard.getNumber("Elevator Setpoint", 0);
         ElevatorPIDLeft.setReference(Setpoint, ControlType.kPosition);
         ElevatorPIDRight.setReference(Setpoint, ControlType.kPosition);
-        
+
     }
 
     public void FineAdjustment(double deltaPosition) {
         // double ElevatorSetpoint = SmartDashboard.getNumber("Elevator Setpoint", 0);
         CurrentTargetSetpoint += deltaPosition;
-        if(CurrentTargetSetpoint>0){
-            CurrentTargetSetpoint=0;
+        if (CurrentTargetSetpoint > 0) {
+            CurrentTargetSetpoint = 0;
         }
-        if(CurrentTargetSetpoint<-30){
-            CurrentTargetSetpoint= -30;
+        if (CurrentTargetSetpoint < -30) {
+            CurrentTargetSetpoint = -30;
         }
         ElevatorPIDLeft.setReference(CurrentTargetSetpoint, ControlType.kPosition);
         ElevatorPIDRight.setReference(CurrentTargetSetpoint, ControlType.kPosition);
-        //SmartDashboard.putNumber("Elevator Setpoint", ElevatorSetpoint);
+        // SmartDashboard.putNumber("Elevator Setpoint", ElevatorSetpoint);
     }
 
     public boolean ScoreCoral(boolean Coral) {
@@ -153,10 +158,10 @@ public class Elevator {
         return Coral;
     }
 
-    //return true to continue, false to stop
+    // return true to continue, false to stop
     public boolean IntakeCoral() {
         boolean HasCoral = BreakBeamClear.get();
-        boolean result = !(!previous && HasCoral);//false if previous was false and hascoral is true
+        boolean result = !(!previous && HasCoral);// false if previous was false and hascoral is true
         previous = HasCoral;
         if (result) {
             OuttakeRoller.set(-0.05);
@@ -169,13 +174,13 @@ public class Elevator {
     public void BreakBeamSignal() {
         SmartDashboard.putBoolean("BreakBeamClear", BreakBeamClear.get());
     }
-    //return true to continue, false to stop
+
+    // return true to continue, false to stop
     public boolean ToggleBooter() {
-        if (IsBooterOut == true){
-           AlgaeBooterPID.setReference(-1,ControlType.kPosition);
-        }
-        else {
-           AlgaeBooterPID.setReference(-2.3,ControlType.kPosition);
+        if (IsBooterOut == true) {
+            AlgaeBooterPID.setReference(-1, ControlType.kPosition);
+        } else {
+            AlgaeBooterPID.setReference(-2.3, ControlType.kPosition);
         }
         IsBooterOut = !IsBooterOut;
         return false;

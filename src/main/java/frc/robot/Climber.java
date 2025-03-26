@@ -18,35 +18,37 @@ public class Climber {
         SparkMax Climber = new SparkMax(MotorIDs.HookID, MotorType.kBrushless);
         RelativeEncoder ClimberEncoder = Climber.getEncoder();
         SparkMaxConfig LeftConfig = new SparkMaxConfig();
-    SparkClosedLoopController PID;
+        SparkClosedLoopController PID;
         SparkBaseConfig BaseConfig;
         double TargetPosition = 0;
         double ExtendSetpoint = -70;
         double RetractSetpoint = 12;
 
-public Climber(ClosedLoopConfig config){
-    PID = Climber.getClosedLoopController();
-        BaseConfig = new SparkMaxConfig();
-        BaseConfig.apply(config);
-        ClimberEncoder.setPosition(0);
-        Climber.configure(BaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
-        SmartDashboard.putNumber("ClimberSetpoint", 0);
-}
-
-        public void DisplayPosition(){
-                    SmartDashboard.putNumber("ClimberEncoder", ClimberEncoder.getPosition());
+        public Climber(ClosedLoopConfig config) {
+                PID = Climber.getClosedLoopController();
+                BaseConfig = new SparkMaxConfig();
+                BaseConfig.apply(config);
+                ClimberEncoder.setPosition(0);
+                Climber.configure(BaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+                SmartDashboard.putNumber("ClimberSetpoint", 0);
         }
-        public void ExtendClimber(){
-                //double HookSetpoint =  SmartDashboard.getNumber("Hook Setpoint", 0);
+
+        public void DisplayPosition() {
+                SmartDashboard.putNumber("ClimberEncoder", ClimberEncoder.getPosition());
+        }
+
+        public void ExtendClimber() {
+                // double HookSetpoint = SmartDashboard.getNumber("Hook Setpoint", 0);
                 PID.setReference(ExtendSetpoint, ControlType.kPosition);
-                //SmartDashboard.putNumber("Hook Setpoint", HookSetpoint);
+                SmartDashboard.putNumber("Hook Setpoint", ExtendSetpoint);
         }
 
-        public void RetractClimber(){
+        public void RetractClimber() {
                 PID.setReference(RetractSetpoint, ControlType.kPosition);
+                SmartDashboard.putNumber("Hook Setpoint", RetractSetpoint);
         }
 
-        public void Test(){
+        public void Test() {
                 double val = SmartDashboard.getNumber("ClimberSetpoint", 0);
                 PID.setReference(val, ControlType.kPosition);
         }
