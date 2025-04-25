@@ -50,11 +50,13 @@ public class Elevator {
 
     public Elevator(ClosedLoopConfig config) {
         /* Elevator Lift */
-        // ElevatorConfig.follow(ElevatorRight, false);
+       // ElevatorConfig.follow(ElevatorRight, false);
         ElevatorPIDRight = ElevatorRight.getClosedLoopController();
         ElevatorPIDLeft = ElevatorLeft.getClosedLoopController();
         ElevatorBaseConfig = new SparkMaxConfig();
         ElevatorBaseConfig.apply(config);
+        ElevatorBaseConfig.idleMode(IdleMode.kBrake);
+        ElevatorConfig.idleMode(IdleMode.kBrake);
         ElevatorRight.configure(ElevatorBaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
         ElevatorLeft.configure(ElevatorBaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
         RightElevatorEncoder = ElevatorRight.getEncoder();
@@ -106,7 +108,7 @@ public class Elevator {
     float FirstPosition = -17;
     float SecondPosition = -30;
     // float ThirdPosition = 5;
-    float[] HeightRotations = { HomePosition, LoadPosition, TrayPosition, FirstPosition, SecondPosition,
+    public float[] HeightRotations = { HomePosition, LoadPosition, TrayPosition, FirstPosition, SecondPosition,
     };
 
     // return true to continue, false to stop
@@ -147,6 +149,9 @@ public class Elevator {
         ElevatorPIDLeft.setReference(CurrentTargetSetpoint, ControlType.kPosition);
         ElevatorPIDRight.setReference(CurrentTargetSetpoint, ControlType.kPosition);
         // SmartDashboard.putNumber("Elevator Setpoint", ElevatorSetpoint);
+    }
+    public void ElevatorVelocity(double Velocity){
+        ElevatorRight.set(Velocity);
     }
 
     public boolean ScoreCoral(boolean Coral) {

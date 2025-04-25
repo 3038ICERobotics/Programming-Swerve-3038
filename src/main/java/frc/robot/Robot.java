@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import java.lang.annotation.Target;
+
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -20,6 +22,7 @@ import com.revrobotics.spark.config.ClosedLoopConfig;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -30,6 +33,7 @@ import edu.wpi.first.networktables.IntegerArraySubscriber;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.ADIS16470_IMU;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Joystick;
@@ -38,6 +42,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Elevator.ElevatorPositions;
+
 
 //   [SWERVE IS IN METERS]   
 // BASE: 0.711m x 0.711m
@@ -91,9 +96,11 @@ public class Robot extends TimedRobot {
   private final int WheelRotationsPerMeter = 27;
   private final int ShaftRotationsPerWheelRotation = 9;
   private final int SecondsPerMinute = 60;
+  double DistanceToDriveSteps = 42.0 / 58.0;
+  double AngleToDistance = 97.4 / 360.0;
   // MaxDriveSpeed and MaxTurnSpeed is in meters per second
-  private final double MaxDriveSpeed = 8;
-  private final double MaxTurnSpeed = 10;
+  private final double MaxDriveSpeed = 12;
+  private final double MaxTurnSpeed = 12;
   // Creating Position, Degree and Voltage variables for each motor
   double VoltageFL = 0;
   double PositionFL = 0;
@@ -177,6 +184,12 @@ public class Robot extends TimedRobot {
   Double TranslateY = 0.0;
   Double TranslateRotation = 0.0;
 
+  // Autonomous
+  double EncoderMovement = 10;
+  int AutoCount = 0;
+  boolean MovementStarted = false;
+  double EncoderStart = 0;
+
   // Swerve Kinematics
   Translation2d FrontLeftDriveLocation = new Translation2d(-0.285, 0.285);
   Translation2d FrontRightDriveLocation = new Translation2d(-0.285, -0.285);
@@ -232,9 +245,10 @@ public class Robot extends TimedRobot {
    * initialization code
    */
   public Robot() {
+    SmartDashboard.putNumber("ClimberSetpoint", 0);
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
-    SmartDashboard.putData("Auto choices", m_chooser);
+    SmartDashboard.putData("Auto Selector", m_chooser);
 
     // Setting PIDF Constants for each motor type
     Neo550.pidf(1, .5, .1, .00001);
@@ -257,7 +271,7 @@ public class Robot extends TimedRobot {
       // }
     }
 
-    analogs[0] = new AnalogContainer(SteerMotors[0].getAnalog(), 2.28, 1.12);
+    analogs[0] = new AnalogContainer(SteerMotors[0].getAnalog(), 2.28, 1.57);
     analogs[1] = new AnalogContainer(SteerMotors[1].getAnalog(), 2.23, 1.88);
     analogs[2] = new AnalogContainer(SteerMotors[2].getAnalog(), 2.25, 2.12);
     analogs[3] = new AnalogContainer(SteerMotors[3].getAnalog(), 2.25, 1.81);
@@ -321,6 +335,8 @@ public class Robot extends TimedRobot {
           DriveMotors[i].getConfigurator().apply(DriveConfig).toString());
     }
 
+    CameraServer.startAutomaticCapture();
+
     RelativeOffset[ModuleOrder.FL.ordinal()] = 0;
     RelativeOffset[ModuleOrder.BL.ordinal()] = 0;
     RelativeOffset[ModuleOrder.FR.ordinal()] = 0;
@@ -362,6 +378,8 @@ public class Robot extends TimedRobot {
       SmartDashboard.putNumber("Relative Offset" + ModuleOrder.values()[i].toString(),
           analogs[i].offset * 360 / GearRatio);
       SmartDashboard.putNumber("Position" + ModuleOrder.values()[i].toString(), analogs[i].sensor.getPosition());
+      SmartDashboard.putNumber("Drive Relative Rotations",
+          FrontRightDrive.getRotorPosition(true).getValueAsDouble());
     }
 
     SmartDashboard.putNumber("Gyro", gyro.getAngle());
@@ -409,7 +427,8 @@ public class Robot extends TimedRobot {
     SwerveModuleState[] moduleStates = Kinematics.toSwerveModuleStates(speeds);
 
     double[] currentAngles = new double[4];
-    SmartDashboard.putNumber("BackLeftTestyThingy", moduleStates[ModuleOrder.BL.ordinal()].angle.getDegrees());
+    // SmartDashboard.putNumber("BackLeftTestyThingy",
+    // moduleStates[ModuleOrder.BL.ordinal()].angle.getDegrees());
 
     for (int i = 0; i < 4; i++) {
       OptimizedStates[i] = angleMinimize(currentAngles[i], moduleStates[i], i);
@@ -491,9 +510,11 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousInit() {
+    AutoCount = 0;
     m_autoSelected = m_chooser.getSelected();
-    // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
-    // System.out.println("Auto selected: " + m_autoSelected);
+    m_autoSelected = SmartDashboard.getString("Auto Selector", kCustomAuto);
+    System.out.println("Auto selected: " + m_autoSelected);
+    EncoderStart = FrontRightDrive.getRotorPosition().getValueAsDouble();
   }
 
   /** This function is called periodically during autonomous. */
@@ -501,12 +522,98 @@ public class Robot extends TimedRobot {
   public void autonomousPeriodic() {
     switch (m_autoSelected) {
       case kCustomAuto:
-        // Put custom auto code here
+        AutoType1();
         break;
       case kDefaultAuto:
       default:
-        // Put default auto code here
+
+        // switch (AutoCount) {
+        //   case 0:
+        //     AutoDrive(12.5, 0, -1);
+        //     break;
+        //   case 1:
+        //     // AutoRotate(45, 1);
+        //     break;
+        // }
+        // DriveControl();
+
         break;
+    }
+  }
+
+  private void AutoType1() {
+    SmartDashboard.putNumber("Drive Relative Rotations Autonomous",
+        FrontRightDrive.getRotorPosition().getValueAsDouble());
+
+    // if (!MovementStarted) {
+    // MovementStarted = true;
+    // EncoderStart = FrontRightDrive.getRotorPosition().getValueAsDouble();
+    // }
+    // if (count < 250) {
+    switch (AutoCount) {
+      case 0:
+        AutoDrive(88, 0, -1);
+        break;
+      case 1:
+        // AutoRotate(45, 1);
+        break;
+    }
+    DriveControl();
+  }
+
+  int CountAtHeight = 0;
+
+  private void AutoElevate(int TargetPosition) {
+    ElevatorObject.GoToHeight(TargetPosition);
+    if (Math
+        .abs(ElevatorObject.RightElevatorEncoder.getPosition() - ElevatorObject.HeightRotations[TargetPosition]) <= 1) {
+      CountAtHeight++;
+    } else {
+      CountAtHeight = 0;
+    }
+    if (CountAtHeight >= 50) {
+      AutoCount++;
+    }
+  }
+
+  private void AutoRotate(double angle, double VelAngle) {
+    if (!MovementStarted) {
+      MovementStarted = true;
+      EncoderStart = FrontRightDrive.getRotorPosition().getValueAsDouble();
+    }
+    if (Math.abs(
+        FrontRightDrive.getRotorPosition().getValueAsDouble()
+            - EncoderStart) < (angle * AngleToDistance * DistanceToDriveSteps)) {
+      // count++;
+      TranslateY = 0.0;
+      TranslateX = 0.0;
+      TranslateRotation = VelAngle;
+    } else {
+      TranslateY = 0.0;
+      TranslateX = 0.0;
+      TranslateRotation = 0.0;
+      MovementStarted = false;
+      AutoCount++;
+    }
+  }
+
+  private void AutoDrive(double Distance, double VelX, double VelY) {
+    if (!MovementStarted) {
+      MovementStarted = true;
+      EncoderStart = FrontRightDrive.getRotorPosition().getValueAsDouble();
+    }
+    if (Math.abs(FrontRightDrive.getRotorPosition().getValueAsDouble() - EncoderStart) < Math
+        .abs(Distance * DistanceToDriveSteps)) {
+      // count++;
+      TranslateY = VelX;
+      TranslateX = VelY;
+      TranslateRotation = 0.0;
+    } else {
+      TranslateY = 0.0;
+      TranslateX = 0.0;
+      TranslateRotation = 0.0;
+      MovementStarted = false;
+      AutoCount++;
     }
   }
 
@@ -550,6 +657,10 @@ public class Robot extends TimedRobot {
     if (Math.abs(TranslateRotation) < JoystickTolerance)
       TranslateRotation = 0.0;
 
+    DriveControl();
+  }
+
+  private void DriveControl() {
     PerformKinematics();
 
     double[] AngleList = new double[4];
@@ -569,28 +680,67 @@ public class Robot extends TimedRobot {
 
     }
   }
-
+int SpeedCount = 0;
   private void CheckButtonPresses() {
     // move elevator to trough scoring height
-    if (JoystickR.getRawButtonPressed(2)) {
+    if (JoystickR.getRawButton(2)) {
       // State.CurrentHeight = ElevatorPositions.Tray.ordinal();
       // State.ElevatorMoving = true;
-      //testing fine down
+      // testing fine down
       ElevatorObject.FineAdjustment(1.5);
+      //ElevatorObject.ElevatorVelocity(0.075);
     }
     // move elvator to first pipe scoring height
-    if (JoystickR.getRawButtonPressed(4)) {
-      // State.CurrentHeight = ElevatorPositions.First.ordinal();
-      // State.ElevatorMoving = true;
-      //Testing Big up
-      ElevatorObject.FineAdjustment(-4);
-    }
+    // if (JoystickR.getRawButtonPressed(4)) {
+    //   // State.CurrentHeight = ElevatorPositions.First.ordinal();
+    //   // State.ElevatorMoving = true;
+    //   // Testing Big up
+    //   ElevatorObject.FineAdjustment(-4);
+    // }
     // move elevator to second pipe scoring height
-    if (JoystickR.getRawButtonPressed(3)) {
+   else if (JoystickR.getRawButton(3)) {
       // State.CurrentHeight = ElevatorPositions.Second.ordinal();
       // State.ElevatorMoving = true;
-      //Testing fine up
+      // Testing fine up
       ElevatorObject.FineAdjustment(-1.5);
+    //   if(SpeedCount < 10){
+    //     ElevatorObject.ElevatorVelocity(-0.1);
+    //   }
+    //   else if (SpeedCount < 20){
+    //     ElevatorObject.ElevatorVelocity(-0.15);
+    //   }
+    //   else if(SpeedCount < 30){
+    //     ElevatorObject.ElevatorVelocity(-0.2);
+    //   }
+    //   else if(SpeedCount < 40){
+    //     ElevatorObject.ElevatorVelocity(-0.3);
+    //   }
+    //   else if(SpeedCount < 50){
+    //     ElevatorObject.ElevatorVelocity(-0.4);
+    //   }
+    //   else if(SpeedCount < 55){
+    //     ElevatorObject.ElevatorVelocity(-0.5);
+    //   }
+    //   else if(SpeedCount < 60){
+    //     ElevatorObject.ElevatorVelocity(-0.6);
+    //   }
+    //   else if(SpeedCount < 65){
+    //     ElevatorObject.ElevatorVelocity(-0.7);
+    //   }
+    //   else if(SpeedCount < 70){
+    //     ElevatorObject.ElevatorVelocity(-0.8);
+    //   }
+    //   else if(SpeedCount < 75){
+    //     ElevatorObject.ElevatorVelocity(-0.9);
+    //   }
+    //   else{
+    //     ElevatorObject.ElevatorVelocity(-1);
+    //   }
+    //   SpeedCount++;
+    // }
+    // else{
+    //   ElevatorObject.ElevatorVelocity(0);
+    //   SpeedCount = 0;
     }
     // run coral eject while held
     if (JoystickR.getRawButton(1)) {
@@ -604,17 +754,17 @@ public class Robot extends TimedRobot {
       // State.ElevatorMoving = true;
     }
     // manual adjust elevator up
-    if (JoystickR.getRawButtonPressed(11)) {
-      ElevatorObject.FineAdjustment(-3);
-    }
-    // manual adjust elevator down
-    if (JoystickR.getRawButtonPressed(10)) {
-      ElevatorObject.FineAdjustment(3);
-    }
+    // if (JoystickR.getRawButtonPressed(11)) {
+    //   ElevatorObject.FineAdjustment(-3);
+    // }
+    // // manual adjust elevator down
+    // if (JoystickR.getRawButtonPressed(10)) {
+    //   ElevatorObject.FineAdjustment(3);
+    // }
     // move elevator to 0 position
-    if (JoystickR.getRawButtonPressed(9)) {
-      ElevatorObject.Rezero();
-    }
+    // if (JoystickR.getRawButtonPressed(9)) {
+    //   ElevatorObject.Rezero();
+    // }
 
     // Temp - revisit with finished climber
     // Extends the climber out
@@ -652,6 +802,11 @@ public class Robot extends TimedRobot {
     }
     if (JoystickR.getRawButtonPressed(7)) {
       ElevatorObject.ToggleBooter();
+    }
+    if (JoystickL.getRawButton(1)) {
+      AlgaeGrabber.Eject(true);
+    } else {
+      AlgaeGrabber.Eject(false);
     }
   }
 
@@ -828,7 +983,7 @@ public class Robot extends TimedRobot {
   public void testPeriodic() {
     CheckButtonPresses();
     // AlgaeGrabber.Test();
-    // Climber.Test();
+    Climber.Test();
     // ElevatorObject.Test();
     PerformActions();
     PIDTuning();

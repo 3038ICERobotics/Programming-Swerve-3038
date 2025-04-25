@@ -30,12 +30,14 @@ public class AlgaePickup {
     RelativeEncoder AlgaeEncoder;
     SparkBaseConfig BaseConfig;
     DigitalInput LimitSwitch = new DigitalInput(3); // Could be a limit switch
+    boolean down = false;
 
     public AlgaePickup(ClosedLoopConfig config) {
         SmartDashboard.putNumber("AlgaePickup Setpoint", 0);
         BaseConfig = new SparkMaxConfig();
         BaseConfig.apply(config);
-        BaseConfig.idleMode(IdleMode.kCoast);
+        BaseConfig.idleMode(IdleMode.kBrake);
+        BaseConfig.smartCurrentLimit(10);
         AlgaeLeft.configure(BaseConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
         AlgaeEncoder = AlgaeLeft.getEncoder();
         AlgaeEncoder.setPosition(0);
@@ -63,23 +65,40 @@ public class AlgaePickup {
     public boolean HomeAlgae() {
         boolean result = LimitSwitch.get();
         if (result) {
-            AlgaeLeft.set(-.08);
+            AlgaeLeft.set(-.1);
         } else {
             AlgaeLeft.set(0);
         }
         AlgaeFlex.set(0);
+        down = false;
         return result;
     }
 
     // return true to continue, false to stop
     public boolean KickAlgae() {
         boolean result = LimitSwitch.get();
+        down = true;
         if (!result) {
-            AlgaeLeft.set(.08);
+            AlgaeLeft.set(.12);
         } else {
             AlgaeLeft.set(0);
         }
-        AlgaeFlex.set(.6);
+        //AlgaeFlex.set(-.6);
         return !result;
+    }
+
+    public boolean Eject(boolean action) {
+        if (action) {
+                AlgaeFlex.set(.25);
+        } else {
+            if(down){
+                AlgaeFlex.set(-.17);
+            }
+            else {
+                AlgaeFlex.set(0);
+
+            }
+        }
+        return action;
     }
 }
