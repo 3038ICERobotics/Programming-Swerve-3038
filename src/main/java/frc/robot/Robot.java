@@ -271,10 +271,10 @@ public class Robot extends TimedRobot {
       // }
     }
 
-    analogs[0] = new AnalogContainer(SteerMotors[0].getAnalog(), 2.28, 1.57);
-    analogs[1] = new AnalogContainer(SteerMotors[1].getAnalog(), 2.23, 1.88);
+    analogs[0] = new AnalogContainer(SteerMotors[0].getAnalog(), 2.28, 1.52);
+    analogs[1] = new AnalogContainer(SteerMotors[1].getAnalog(), 2.23, 1.09);//1.88
     analogs[2] = new AnalogContainer(SteerMotors[2].getAnalog(), 2.25, 2.12);
-    analogs[3] = new AnalogContainer(SteerMotors[3].getAnalog(), 2.25, 1.81);
+    analogs[3] = new AnalogContainer(SteerMotors[3].getAnalog(), 2.21, 1.66);
 
     // PID Values
     Prop = 1;// 1; //P = 0.000170
