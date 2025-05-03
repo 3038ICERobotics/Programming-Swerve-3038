@@ -136,9 +136,15 @@ public class Elevator {
         ElevatorPIDRight.setReference(Setpoint, ControlType.kPosition);
 
     }
+    public void ResetTarget() {
+        CurrentTargetSetpoint = 0;
+        ElevatorPIDLeft.setReference(CurrentTargetSetpoint, ControlType.kPosition);
+        ElevatorPIDRight.setReference(CurrentTargetSetpoint, ControlType.kPosition);
+    }
 
     public void FineAdjustment(double deltaPosition) {
         // double ElevatorSetpoint = SmartDashboard.getNumber("Elevator Setpoint", 0);
+
         CurrentTargetSetpoint += deltaPosition;
         if (CurrentTargetSetpoint > 0) {
             CurrentTargetSetpoint = 0;

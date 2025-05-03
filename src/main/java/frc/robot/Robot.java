@@ -209,7 +209,7 @@ public class Robot extends TimedRobot {
   SwerveModuleState backRightOptimized = new SwerveModuleState();
   SwerveModuleState[] OptimizedStates = new SwerveModuleState[4];
 
-  Elevator ElevatorObject;
+  //Elevator ElevatorObject;
   AlgaePickup AlgaeGrabber;
   CoralIntakePlatform Intake;
   Climber Climber;
@@ -259,7 +259,7 @@ public class Robot extends TimedRobot {
     NeoIntake.pidf(0.02, 0, 0, 0);
     Intake = new CoralIntakePlatform(NeoIntake);
     Climber = new Climber(Neo);
-    ElevatorObject = new Elevator(NeoElevator);
+    //ElevatorObject = new Elevator(NeoElevator);
 
     gyro.calibrate();
     for (int i = 0; i < 4; i++) {
@@ -274,7 +274,7 @@ public class Robot extends TimedRobot {
     analogs[0] = new AnalogContainer(SteerMotors[0].getAnalog(), 2.28, 1.52);
     analogs[1] = new AnalogContainer(SteerMotors[1].getAnalog(), 2.23, 1.09);//1.88
     analogs[2] = new AnalogContainer(SteerMotors[2].getAnalog(), 2.25, 2.12);
-    analogs[3] = new AnalogContainer(SteerMotors[3].getAnalog(), 2.21, 1.66);
+    analogs[3] = new AnalogContainer(SteerMotors[3].getAnalog(), 2.21, 0.54);
 
     // PID Values
     Prop = 1;// 1; //P = 0.000170
@@ -394,12 +394,12 @@ public class Robot extends TimedRobot {
     }
 
     // Calling SmartDashboard encoder positions from each other class
-    ElevatorObject.DisplayPosition();
+    //ElevatorObject.DisplayPosition();
     AlgaeGrabber.DisplayPosition();
     Intake.DisplayPosition();
     Climber.DisplayPosition();
 
-    ElevatorObject.BreakBeamSignal();
+    //ElevatorObject.BreakBeamSignal();
     SmartDashboard.putNumber("tx", tx.getDouble(0));
     SmartDashboard.putNumber("ty", ty.getDouble(0));
     SmartDashboard.putNumber("ta", ta.getDouble(0));
@@ -563,18 +563,18 @@ public class Robot extends TimedRobot {
 
   int CountAtHeight = 0;
 
-  private void AutoElevate(int TargetPosition) {
-    ElevatorObject.GoToHeight(TargetPosition);
-    if (Math
-        .abs(ElevatorObject.RightElevatorEncoder.getPosition() - ElevatorObject.HeightRotations[TargetPosition]) <= 1) {
-      CountAtHeight++;
-    } else {
-      CountAtHeight = 0;
-    }
-    if (CountAtHeight >= 50) {
-      AutoCount++;
-    }
-  }
+  // private void AutoElevate(int TargetPosition) {
+  //   ElevatorObject.GoToHeight(TargetPosition);
+  //   if (Math
+  //       .abs(ElevatorObject.RightElevatorEncoder.getPosition() - ElevatorObject.HeightRotations[TargetPosition]) <= 1) {
+  //     CountAtHeight++;
+  //   } else {
+  //     CountAtHeight = 0;
+  //   }
+  //   if (CountAtHeight >= 50) {
+  //     AutoCount++;
+  //   }
+  // }
 
   private void AutoRotate(double angle, double VelAngle) {
     if (!MovementStarted) {
@@ -683,11 +683,11 @@ public class Robot extends TimedRobot {
 int SpeedCount = 0;
   private void CheckButtonPresses() {
     // move elevator to trough scoring height
-    if (JoystickR.getRawButton(2)) {
+    if (JoystickR.getRawButtonPressed(2)) {
       // State.CurrentHeight = ElevatorPositions.Tray.ordinal();
       // State.ElevatorMoving = true;
       // testing fine down
-      ElevatorObject.FineAdjustment(1.5);
+      //ElevatorObject.FineAdjustment(10);
       //ElevatorObject.ElevatorVelocity(0.075);
     }
     // move elvator to first pipe scoring height
@@ -698,11 +698,11 @@ int SpeedCount = 0;
     //   ElevatorObject.FineAdjustment(-4);
     // }
     // move elevator to second pipe scoring height
-   else if (JoystickR.getRawButton(3)) {
+   else if (JoystickR.getRawButtonPressed(3)) {
       // State.CurrentHeight = ElevatorPositions.Second.ordinal();
       // State.ElevatorMoving = true;
       // Testing fine up
-      ElevatorObject.FineAdjustment(-1.5);
+      //ElevatorObject.FineAdjustment(-10);
     //   if(SpeedCount < 10){
     //     ElevatorObject.ElevatorVelocity(-0.1);
     //   }
@@ -793,15 +793,15 @@ int SpeedCount = 0;
     if (JoystickL.getRawButtonPressed(10)) {
       State.InClimbPrep = !State.InClimbPrep;
       State.ClimbPrepInProgress = true;
-      State.CurrentHeight = ElevatorPositions.Home.ordinal();
-      State.ElevatorMoving = true;
+      // State.CurrentHeight = ElevatorPositions.Home.ordinal();
+      // State.ElevatorMoving = true;
     }
     // reset Yaw
     if (JoystickL.getRawButtonPressed(8)) {
       gyro.reset();
     }
     if (JoystickR.getRawButtonPressed(7)) {
-      ElevatorObject.ToggleBooter();
+      //ElevatorObject.ToggleBooter();
     }
     if (JoystickL.getRawButton(1)) {
       AlgaeGrabber.Eject(true);
@@ -818,17 +818,17 @@ int SpeedCount = 0;
       State.HomeAlgae = AlgaeGrabber.HomeAlgae();
     }
     if (State.ClearCoral) {
-      State.ClearCoral = ElevatorObject.IntakeCoral();
+      //State.ClearCoral = ElevatorObject.IntakeCoral();
     }
     if (State.IntakeCoral) {
       State.IntakeCoral = Intake.GoToIntake();
     }
     if (State.ScoreCoral) {
-      State.ScoreCoral = ElevatorObject.ScoreCoral(JoystickR.getRawButton(1));
+      //State.ScoreCoral = ElevatorObject.ScoreCoral(JoystickR.getRawButton(1));
     }
-    if (State.ElevatorMoving) {
-      State.ElevatorMoving = ElevatorObject.GoToHeight(State.CurrentHeight);
-    }
+    // if (State.ElevatorMoving) {
+    //   State.ElevatorMoving = ElevatorObject.GoToHeight(State.CurrentHeight);
+    // }
     if (State.ClimbPrepInProgress) {
       if (State.InClimbPrep) {
         State.ClimbPrepInProgress = Intake.GoToClimb();
@@ -976,6 +976,7 @@ int SpeedCount = 0;
     SmartDashboard.putNumber("I Gain", 0); // 0.000001
     SmartDashboard.putNumber("D Gain", 0); // 0.000020
     SmartDashboard.putNumber("Feed Forward", 0); // 0.000001
+    //ElevatorObject.ResetTarget();
   }
 
   /** This function is called periodically during test mode. */
@@ -983,7 +984,7 @@ int SpeedCount = 0;
   public void testPeriodic() {
     CheckButtonPresses();
     // AlgaeGrabber.Test();
-    Climber.Test();
+    //Climber.Test();
     // ElevatorObject.Test();
     PerformActions();
     PIDTuning();
